@@ -61,9 +61,9 @@ export default function ResenhaPage() {
   async function criarResenha() {
     if (!partidaSel) return;
     try {
-      const { data } = await api.post(`/peladas/${peladaId}/partidas/${partidaSel.id}/resenha`);
-      setResenha(data);
+      await api.post(`/peladas/${peladaId}/partidas/${partidaSel.id}/resenha`);
       toast.success("Resenha criada!");
+      refreshResenha();
     } catch (e: any) { toast.error(e.response?.data?.error || "Erro ao criar resenha"); }
   }
 

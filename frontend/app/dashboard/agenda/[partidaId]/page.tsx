@@ -5,17 +5,16 @@ import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, UserCheck, Clock, Users, Bell, Trash2, DollarSign, Goal } from "lucide-react";
+import { ArrowLeft, UserCheck, Clock, Users, Bell, Trash2, DollarSign, Search } from "lucide-react";
 
 interface Jogador { id: string; nome: string; fotoNormal: string | null; celular: string | null }
 interface JogadorPelada { id: string; posicao: string; tipo: string; jogador: Jogador }
 interface Presenca { id: string; status: string; posicaoFila: number | null; jogadorPelada: JogadorPelada }
-interface Gol { id: string; minuto: number | null; time: string | null; jogadorPelada: { jogador: { nome: string } } }
+interface Gol { id: string; jogadorPeladaId: string; jogadorPelada: { jogador: { nome: string } } }
 interface Partida {
-  id: string; data: string; status: string; placarTimeA: number | null; placarTimeB: number | null;
+  id: string; data: string; status: string;
   presencas: Presenca[];
 }
 
@@ -36,22 +35,11 @@ export default function PartidaPage() {
   const [jogadores, setJogadores] = useState<JogadorPelada[]>([]);
   const [jogadorSelecionado, setJogadorSelecionado] = useState("");
   const [loadingLembrete, setLoadingLembrete] = useState(false);
-
-  // gols
   const [gols, setGols] = useState<Gol[]>([]);
-  const [golJogador, setGolJogador] = useState("");
-  const [golTime, setGolTime] = useState("A");
-  const [golMinuto, setGolMinuto] = useState("");
-  // placar
-  const [placarA, setPlacarA] = useState("");
-  const [placarB, setPlacarB] = useState("");
+  const [buscaGol, setBuscaGol] = useState("");
 
   const load = () => {
-    api.get(`/peladas/${peladaId}/partidas/${partidaId}`).then(r => {
-      setPartida(r.data);
-      setPlacarA(r.data.placarTimeA !== null ? String(r.data.placarTimeA) : "");
-      setPlacarB(r.data.placarTimeB !== null ? String(r.data.placarTimeB) : "");
-    }).catch(() => {});
+    api.get(`/peladas/${peladaId}/partidas/${partidaId}`).then(r => setPartida(r.data)).catch(() => {});
   };
   const loadGols = () => {
     api.get(`/peladas/${peladaId}/partidas/${partidaId}/gols`).then(r => setGols(r.data)).catch(() => {});
@@ -106,16 +94,11 @@ export default function PartidaPage() {
     finally { setLoadingLembrete(false); }
   }
 
-  async function registrarGol() {
-    if (!golJogador) { toast.error("Selecione o jogador que marcou"); return; }
+  async function registrarGol(jogadorPeladaId: string) {
     try {
-      await api.post(`/peladas/${peladaId}/partidas/${partidaId}/gols`, {
-        jogadorPeladaId: golJogador,
-        time: golTime,
-        minuto: golMinuto ? Number(golMinuto) : undefined,
-      });
-      setGolJogador(""); setGolMinuto("");
+      await api.post(`/peladas/${peladaId}/partidas/${partidaId}/gols`, { jogadorPeladaId });
       loadGols();
+      toast.success("⚽ Gol registrado!");
     } catch { toast.error("Erro ao registrar gol"); }
   }
 
@@ -124,17 +107,6 @@ export default function PartidaPage() {
       await api.delete(`/peladas/${peladaId}/partidas/${partidaId}/gols/${golId}`);
       loadGols();
     } catch { toast.error("Erro ao remover gol"); }
-  }
-
-  async function salvarPlacar() {
-    try {
-      await api.patch(`/peladas/${peladaId}/partidas/${partidaId}/placar`, {
-        placarTimeA: placarA !== "" ? Number(placarA) : null,
-        placarTimeB: placarB !== "" ? Number(placarB) : null,
-      });
-      toast.success("Placar salvo!");
-      load();
-    } catch { toast.error("Erro ao salvar placar"); }
   }
 
   if (!partida) return (
@@ -147,7 +119,22 @@ export default function PartidaPage() {
   const goleiros = confirmados.filter(p => p.jogadorPelada.posicao === "GOLEIRO");
   const linha = confirmados.filter(p => p.jogadorPelada.posicao === "LINHA");
   const jogadoresDisponiveis = jogadores.filter(j => !partida.presencas.some(p => p.jogadorPelada.id === j.id));
-  const isRealizada = partida.status === "REALIZADA";
+  const podeRegistrar = partida.status !== "CANCELADA";
+
+  // contagem de gols por jogadorPeladaId
+  const golsPorJogador: Record<string, number> = {};
+  for (const g of gols) {
+    golsPorJogador[g.jogadorPeladaId] = (golsPorJogador[g.jogadorPeladaId] || 0) + 1;
+  }
+
+  const confirmadosOrdenados = [...confirmados].sort((a, b) =>
+    a.jogadorPelada.jogador.nome.localeCompare(b.jogadorPelada.jogador.nome, "pt-BR")
+  );
+  const confirmadosFiltrados = buscaGol.trim()
+    ? confirmadosOrdenados.filter(p =>
+        p.jogadorPelada.jogador.nome.toLowerCase().includes(buscaGol.toLowerCase())
+      )
+    : confirmadosOrdenados;
 
   function Avatar({ nome, foto }: { nome: string; foto: string | null }) {
     if (foto) return <img src={`http://localhost:3001${foto}`} alt={nome} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
@@ -209,7 +196,7 @@ export default function PartidaPage() {
             ))}
           </SelectContent>
         </Select>
-        {isRealizada && (
+        {podeRegistrar && (
           <Button variant="outline" size="sm" className="gap-2 h-9" onClick={gerarDiaria}>
             <DollarSign className="w-3.5 h-3.5" /> Gerar diárias
           </Button>
@@ -219,76 +206,6 @@ export default function PartidaPage() {
           {loadingLembrete ? "Enviando..." : "Enviar lembretes"}
         </Button>
       </div>
-
-      {/* Placar — só quando REALIZADA */}
-      {isRealizada && (
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-              <Goal className="w-4 h-4 text-green-500" /> Placar da partida
-            </h3>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 text-center">
-                <p className="text-xs text-slate-500 mb-1">Time A</p>
-                <Input type="number" min="0" className="text-center text-2xl font-bold h-14 text-green-700"
-                  value={placarA} onChange={e => setPlacarA(e.target.value)} placeholder="0" />
-              </div>
-              <span className="text-2xl font-bold text-slate-300">×</span>
-              <div className="flex-1 text-center">
-                <p className="text-xs text-slate-500 mb-1">Time B</p>
-                <Input type="number" min="0" className="text-center text-2xl font-bold h-14 text-blue-700"
-                  value={placarB} onChange={e => setPlacarB(e.target.value)} placeholder="0" />
-              </div>
-              <Button className="bg-green-600 hover:bg-green-700 h-14 px-5" onClick={salvarPlacar}>Salvar</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Registrar gols — só quando REALIZADA */}
-      {isRealizada && (
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Registrar gol</h3>
-            <div className="flex gap-2 flex-wrap">
-              <Select value={golJogador} onValueChange={setGolJogador}>
-                <SelectTrigger className="flex-1 min-w-36"><SelectValue placeholder="Quem fez o gol..." /></SelectTrigger>
-                <SelectContent>
-                  {confirmados.map(p => (
-                    <SelectItem key={p.jogadorPelada.id} value={p.jogadorPelada.id}>{p.jogadorPelada.jogador.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={golTime} onValueChange={setGolTime}>
-                <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">Time A</SelectItem>
-                  <SelectItem value="B">Time B</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="number" min="1" placeholder="Min" className="w-20"
-                value={golMinuto} onChange={e => setGolMinuto(e.target.value)} />
-              <Button className="bg-green-600 hover:bg-green-700" onClick={registrarGol}>⚽ Gol!</Button>
-            </div>
-
-            {gols.length > 0 && (
-              <div className="mt-3 space-y-1.5">
-                {gols.map(g => (
-                  <div key={g.id} className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg">
-                    <span className="font-bold text-green-600">⚽</span>
-                    <span className="font-medium flex-1">{g.jogadorPelada.jogador.nome}</span>
-                    {g.time && <Badge variant="outline" className="text-xs">{g.time === "A" ? "Time A" : "Time B"}</Badge>}
-                    {g.minuto && <span className="text-slate-400 text-xs">{g.minuto}'</span>}
-                    <button onClick={() => removerGol(g.id)} className="p-1 rounded hover:bg-red-50 hover:text-red-500 text-slate-300 transition-colors">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Resumo */}
       <div className="grid grid-cols-3 gap-3">
@@ -305,6 +222,62 @@ export default function PartidaPage() {
           </Card>
         ))}
       </div>
+
+      {/* Gols por atleta */}
+      {podeRegistrar && confirmados.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">⚽ Gols por atleta</h3>
+            {confirmados.length > 8 && (
+              <div className="relative mb-3">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar atleta..."
+                  value={buscaGol}
+                  onChange={e => setBuscaGol(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+                />
+              </div>
+            )}
+            <div className={`space-y-1.5 ${confirmados.length > 8 ? "max-h-80 overflow-y-auto pr-1" : ""}`}>
+              {confirmadosFiltrados.map(p => {
+                const qtd = golsPorJogador[p.jogadorPelada.id] || 0;
+                const golsDoJogador = gols.filter(g => g.jogadorPeladaId === p.jogadorPelada.id);
+                return (
+                  <div key={p.id} className="flex items-center gap-3 py-1.5 border-b border-slate-50 last:border-0">
+                    <Avatar nome={p.jogadorPelada.jogador.nome} foto={p.jogadorPelada.jogador.fotoNormal} />
+                    <span className="text-sm font-medium text-slate-800 flex-1 truncate">{p.jogadorPelada.jogador.nome}</span>
+                    {/* botão remover último gol */}
+                    {qtd > 0 && (
+                      <button
+                        onClick={() => removerGol(golsDoJogador[golsDoJogador.length - 1].id)}
+                        className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:border-red-300 hover:text-red-500 transition-colors text-sm font-bold"
+                      >
+                        −
+                      </button>
+                    )}
+                    <span className={`w-8 text-center font-bold text-lg ${qtd > 0 ? "text-green-600" : "text-slate-300"}`}>{qtd}</span>
+                    {/* botão adicionar gol */}
+                    <button
+                      onClick={() => registrarGol(p.jogadorPelada.id)}
+                      className="w-7 h-7 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white text-sm font-bold transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {buscaGol && confirmadosFiltrados.length === 0 && (
+              <p className="text-sm text-slate-400 italic text-center py-2">Nenhum atleta encontrado</p>
+            )}
+            {gols.length > 0 && (
+              <p className="text-xs text-slate-400 mt-3 text-right">Total: {gols.length} gol{gols.length !== 1 ? "s" : ""}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Confirmar presença */}
       <Card className="border-0 shadow-sm">
