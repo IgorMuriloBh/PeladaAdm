@@ -4,6 +4,7 @@ import { upload } from "../middlewares/upload";
 import * as auth from "../controllers/auth.controller";
 import * as pelada from "../controllers/pelada.controller";
 import * as jogador from "../controllers/jogador.controller";
+import * as partida from "../controllers/partida.controller";
 
 const router = Router();
 
@@ -24,5 +25,17 @@ const fotoFields = upload.fields([{ name: "fotoNormal", maxCount: 1 }, { name: "
 router.get("/peladas/:peladaId/jogadores", authMiddleware, jogador.listar);
 router.post("/peladas/:peladaId/jogadores", authMiddleware, fotoFields, jogador.criar);
 router.put("/peladas/:peladaId/jogadores/:id", authMiddleware, fotoFields, jogador.atualizar);
+
+// Partidas / Agenda
+router.get("/peladas/:peladaId/partidas", authMiddleware, partida.listar);
+router.get("/peladas/:peladaId/partidas/:id", authMiddleware, partida.buscar);
+router.post("/peladas/:peladaId/partidas", authMiddleware, partida.criar);
+router.post("/peladas/:peladaId/partidas/gerar", authMiddleware, partida.gerarProximas);
+router.put("/peladas/:peladaId/partidas/:id", authMiddleware, partida.atualizar);
+
+// Presenças
+router.post("/peladas/:peladaId/partidas/:id/presencas", authMiddleware, partida.confirmarPresenca);
+router.delete("/peladas/:peladaId/partidas/:id/presencas/:presencaId", authMiddleware, partida.removerPresenca);
+router.post("/peladas/:peladaId/partidas/:id/lembretes", authMiddleware, partida.enviarLembretes);
 
 export default router;
