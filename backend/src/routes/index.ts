@@ -6,6 +6,8 @@ import * as pelada from "../controllers/pelada.controller";
 import * as jogador from "../controllers/jogador.controller";
 import * as partida from "../controllers/partida.controller";
 import * as fin from "../controllers/financeiro.controller";
+import * as gols from "../controllers/gols.controller";
+import * as stats from "../controllers/estatisticas.controller";
 
 const router = Router();
 
@@ -38,6 +40,16 @@ router.put("/peladas/:peladaId/partidas/:id", authMiddleware, partida.atualizar)
 router.post("/peladas/:peladaId/partidas/:id/presencas", authMiddleware, partida.confirmarPresenca);
 router.delete("/peladas/:peladaId/partidas/:id/presencas/:presencaId", authMiddleware, partida.removerPresenca);
 router.post("/peladas/:peladaId/partidas/:id/lembretes", authMiddleware, partida.enviarLembretes);
+
+// Gols / Placar
+router.get("/peladas/:peladaId/partidas/:partidaId/gols", authMiddleware, gols.listarGols);
+router.post("/peladas/:peladaId/partidas/:partidaId/gols", authMiddleware, gols.registrarGol);
+router.delete("/peladas/:peladaId/partidas/:partidaId/gols/:golId", authMiddleware, gols.removerGol);
+router.patch("/peladas/:peladaId/partidas/:partidaId/placar", authMiddleware, gols.atualizarPlacar);
+
+// Estatísticas e Artilharia
+router.get("/peladas/:peladaId/estatisticas", authMiddleware, stats.estatisticasJogadores);
+router.get("/peladas/:peladaId/artilharia", authMiddleware, stats.artilharia);
 
 // Financeiro — Mensalidades
 router.get("/peladas/:peladaId/financeiro/mensalidades", authMiddleware, fin.listarMensalidades);
