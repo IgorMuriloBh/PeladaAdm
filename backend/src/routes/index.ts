@@ -5,6 +5,7 @@ import * as auth from "../controllers/auth.controller";
 import * as pelada from "../controllers/pelada.controller";
 import * as jogador from "../controllers/jogador.controller";
 import * as partida from "../controllers/partida.controller";
+import * as fin from "../controllers/financeiro.controller";
 
 const router = Router();
 
@@ -37,5 +38,26 @@ router.put("/peladas/:peladaId/partidas/:id", authMiddleware, partida.atualizar)
 router.post("/peladas/:peladaId/partidas/:id/presencas", authMiddleware, partida.confirmarPresenca);
 router.delete("/peladas/:peladaId/partidas/:id/presencas/:presencaId", authMiddleware, partida.removerPresenca);
 router.post("/peladas/:peladaId/partidas/:id/lembretes", authMiddleware, partida.enviarLembretes);
+
+// Financeiro — Mensalidades
+router.get("/peladas/:peladaId/financeiro/mensalidades", authMiddleware, fin.listarMensalidades);
+router.post("/peladas/:peladaId/financeiro/mensalidades/gerar", authMiddleware, fin.gerarMensalidades);
+router.patch("/peladas/:peladaId/financeiro/mensalidades/:id", authMiddleware, fin.marcarMensalidade);
+router.get("/peladas/:peladaId/financeiro/inadimplentes", authMiddleware, fin.inadimplentes);
+
+// Financeiro — Diárias
+router.post("/peladas/:peladaId/partidas/:partidaId/diaria", authMiddleware, fin.gerarDiaria);
+router.get("/peladas/:peladaId/financeiro/diarias", authMiddleware, fin.listarDiarias);
+router.patch("/peladas/:peladaId/financeiro/diarias/:id", authMiddleware, fin.marcarDiaria);
+
+// Financeiro — Resenha
+router.post("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fin.criarResenha);
+router.get("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fin.buscarResenha);
+router.post("/peladas/:peladaId/resenha/:resenhaId/participantes", authMiddleware, fin.adicionarParticipanteResenha);
+router.patch("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.marcarPagamentoResenha);
+router.delete("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.removerParticipanteResenha);
+
+// Financeiro — Resumo
+router.get("/peladas/:peladaId/financeiro/resumo", authMiddleware, fin.resumo);
 
 export default router;

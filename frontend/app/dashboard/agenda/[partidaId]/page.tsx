@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, UserCheck, UserX, Clock, Users, Bell, Trash2 } from "lucide-react";
+import { ArrowLeft, UserCheck, Clock, Users, Bell, Trash2, DollarSign } from "lucide-react";
 
 interface Jogador { id: string; nome: string; fotoNormal: string | null; celular: string | null }
 interface JogadorPelada { id: string; posicao: string; tipo: string; jogador: Jogador }
@@ -69,6 +69,13 @@ export default function PartidaPage() {
       toast.success("Status atualizado");
       load();
     } catch { toast.error("Erro ao atualizar status"); }
+  }
+
+  async function gerarDiaria() {
+    try {
+      const { data } = await api.post(`/peladas/${peladaId}/partidas/${partidaId}/diaria`);
+      toast.success(`${data.criados} diária(s) gerada(s) no financeiro`);
+    } catch { toast.error("Erro ao gerar diárias"); }
   }
 
   async function enviarLembretes() {
@@ -152,6 +159,12 @@ export default function PartidaPage() {
             ))}
           </SelectContent>
         </Select>
+        {partida.status === "REALIZADA" && (
+          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={gerarDiaria}>
+            <DollarSign className="w-3.5 h-3.5" />
+            Gerar diárias
+          </Button>
+        )}
         <Button variant="outline" size="sm" className="gap-2 h-9" onClick={enviarLembretes} disabled={loadingLembrete}>
           <Bell className="w-3.5 h-3.5" />
           {loadingLembrete ? "Enviando..." : "Enviar lembretes"}
