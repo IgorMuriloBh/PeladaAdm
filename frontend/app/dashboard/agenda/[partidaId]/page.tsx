@@ -21,6 +21,7 @@ interface Partida {
 const STATUS_CORES: Record<string, string> = {
   AGENDADA: "bg-blue-100 text-blue-700",
   CONFIRMADA: "bg-green-100 text-green-700",
+  EM_ANDAMENTO: "bg-orange-100 text-orange-700",
   REALIZADA: "bg-slate-100 text-slate-600",
   CANCELADA: "bg-red-100 text-red-600",
 };
@@ -119,7 +120,7 @@ export default function PartidaPage() {
   const goleiros = confirmados.filter(p => p.jogadorPelada.posicao === "GOLEIRO");
   const linha = confirmados.filter(p => p.jogadorPelada.posicao === "LINHA");
   const jogadoresDisponiveis = jogadores.filter(j => !partida.presencas.some(p => p.jogadorPelada.id === j.id));
-  const podeRegistrar = partida.status !== "CANCELADA";
+  const podeRegistrar = ["EM_ANDAMENTO", "REALIZADA"].includes(partida.status);
 
   // contagem de gols por jogadorPeladaId
   const golsPorJogador: Record<string, number> = {};
@@ -191,8 +192,14 @@ export default function PartidaPage() {
         <Select onValueChange={atualizarStatus}>
           <SelectTrigger className="w-44 h-9"><SelectValue placeholder="Alterar status" /></SelectTrigger>
           <SelectContent>
-            {["AGENDADA", "CONFIRMADA", "REALIZADA", "CANCELADA"].map(s => (
-              <SelectItem key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</SelectItem>
+            {[
+              { value: "AGENDADA", label: "Agendada" },
+              { value: "CONFIRMADA", label: "Confirmada" },
+              { value: "EM_ANDAMENTO", label: "Em andamento" },
+              { value: "REALIZADA", label: "Realizada" },
+              { value: "CANCELADA", label: "Cancelada" },
+            ].map(s => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>

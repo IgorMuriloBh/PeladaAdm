@@ -44,9 +44,10 @@ export default function ResenhaPage() {
 
   useEffect(() => {
     if (!peladaId) return;
-    api.get(`/peladas/${peladaId}/partidas?status=REALIZADA`).then(r => {
-      setPartidas(r.data);
-      if (r.data.length) setPartidaSel(r.data[0]);
+    api.get(`/peladas/${peladaId}/partidas`).then(r => {
+      const filtradas = r.data.filter((p: Partida) => ["EM_ANDAMENTO", "REALIZADA"].includes(p.status));
+      setPartidas(filtradas);
+      if (filtradas.length) setPartidaSel(filtradas[0]);
     }).catch(() => {});
     api.get(`/peladas/${peladaId}/jogadores`).then(r => setJogadores(r.data)).catch(() => {});
   }, [peladaId]);
@@ -136,7 +137,7 @@ export default function ResenhaPage() {
               <Utensils className="w-7 h-7 text-orange-400" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-1">Nenhuma partida realizada</h3>
-            <p className="text-sm text-slate-500">As resenhas aparecem para partidas com status "Realizada"</p>
+            <p className="text-sm text-slate-500">As resenhas aparecem para partidas "Em andamento" ou "Realizada"</p>
           </CardContent>
         </Card>
       ) : !resenha ? (

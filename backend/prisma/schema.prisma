@@ -224,6 +224,7 @@ enum Posicao {
 enum StatusPartida {
   AGENDADA
   CONFIRMADA
+  EM_ANDAMENTO
   REALIZADA
   CANCELADA
 }

@@ -44,7 +44,7 @@ export default function DestaquesPage() {
   useEffect(() => {
     if (!peladaId) return;
     api.get(`/peladas/${peladaId}/partidas`).then(r => {
-      const realizadas = r.data.filter((p: Partida) => p.status === "REALIZADA");
+      const realizadas = r.data.filter((p: Partida) => ["EM_ANDAMENTO", "REALIZADA"].includes(p.status));
       setPartidas(realizadas);
       if (realizadas.length) setPartidaSel(realizadas[0].id);
     }).catch(() => {});
@@ -133,7 +133,7 @@ export default function DestaquesPage() {
               <Star className="w-7 h-7 text-amber-400" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-1">Nenhuma partida realizada</h3>
-            <p className="text-sm text-slate-500">Os destaques são atribuídos a partidas com status "Realizada"</p>
+            <p className="text-sm text-slate-500">Os destaques são atribuídos a partidas "Em andamento" ou "Realizada"</p>
           </CardContent>
         </Card>
       ) : (

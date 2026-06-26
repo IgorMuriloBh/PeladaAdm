@@ -20,10 +20,11 @@ interface Partida {
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  AGENDADA:   { label: "Agendada",   color: "bg-blue-100 text-blue-700" },
-  CONFIRMADA: { label: "Confirmada", color: "bg-green-100 text-green-700" },
-  REALIZADA:  { label: "Realizada",  color: "bg-slate-100 text-slate-600" },
-  CANCELADA:  { label: "Cancelada",  color: "bg-red-100 text-red-600" },
+  AGENDADA:     { label: "Agendada",     color: "bg-blue-100 text-blue-700" },
+  CONFIRMADA:   { label: "Confirmada",   color: "bg-green-100 text-green-700" },
+  EM_ANDAMENTO: { label: "Em andamento", color: "bg-orange-100 text-orange-700" },
+  REALIZADA:    { label: "Realizada",    color: "bg-slate-100 text-slate-600" },
+  CANCELADA:    { label: "Cancelada",    color: "bg-red-100 text-red-600" },
 };
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
