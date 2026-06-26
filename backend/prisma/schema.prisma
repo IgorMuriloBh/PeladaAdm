@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  peladas Pelada[]
+}
+
+model Pelada {
+  id          String   @id @default(cuid())
+  nome        String
+  slug        String   @unique
+  logo        String?
+  corPrimaria String   @default("#16a34a")
+  corSecundaria String @default("#15803d")
+  corTexto    String   @default("#ffffff")
+  diaSemana   Int[]    // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
+  horario     String   @default("20:00")
+  maxJogadores Int     @default(20)
+  horaAbreLista String  @default("08:00")
+  horaFechaLista String @default("18:00")
+  ativa       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adminId String
+  admin   Admin  @relation(fields: [adminId], references: [id])
+
+  configuracaoFinanceira ConfiguracaoFinanceira?
+  jogadores              JogadorPelada[]
+  partidas               Partida[]
+}
+
+model ConfiguracaoFinanceira {
+  id                String  @id @default(cuid())
+  mensalistaValor   Float   @default(90.00)
+  diaristaValor     Float   @default(30.00)
+  resenhaBebe       Float   @default(85.00)
+  resenhaNaoBebe    Float   @default(40.00)
+  resenhaGoleiro    Float   @default(40.00)
+  pontoPresenca     Int     @default(1)
+  pontoVitoria      Int     @default(3)
+  pontoGol          Int     @default(1)
+  pontoDestaque     Int     @default(5)
+  pontoAguaSalsicha Int     @default(-3)
+  updatedAt         DateTime @updatedAt
+
+  peladaId String @unique
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+}
+
+model Jogador {
+  id          String   @id @default(cuid())
+  nome        String
+  email       String   @unique
+  celular     String?
+  fotoNormal  String?
+  fotoFeliz   String?
+  fotoTriste  String?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  peladas     JogadorPelada[]
+}
+
+model JogadorPelada {
+  id          String      @id @default(cuid())
+  tipo        TipoJogador @default(DIARISTA)
+  posicao     Posicao     @default(LINHA)
+  nivel       Int         @default(3) // 1-5 para sorteio equilibrado
+  ativo       Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  jogadorId String
+  jogador   Jogador @relation(fields: [jogadorId], references: [id])
+
+  peladaId String
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+
+  presencas       Presenca[]
+  pagamentos      Pagamento[]
+  resenhaPresencas ResenhaPresenca[]
+  gols            Gol[]
+  votacoes        Votacao[]
+
+  @@unique([jogadorId, peladaId])
+}
+
+model Partida {
+  id           String        @id @default(cuid())
+  data         DateTime
+  status       StatusPartida @default(AGENDADA)
+  placarTimeA  Int?
+  placarTimeB  Int?
+  observacoes  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  peladaId String
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+
+  presencas  Presenca[]
+  gols       Gol[]
+  votacoes   Votacao[]
+  resenha    Resenha?
+}
+
+model Presenca {
+  id        String        @id @default(cuid())
+  status    StatusPresenca @default(CONFIRMADO)
+  posicaoFila Int?
+  createdAt DateTime      @default(now())
+
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id])
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+
+  @@unique([partidaId, jogadorPeladaId])
+}
+
+model Gol {
+  id        String   @id @default(cuid())
+  minuto    Int?
+  time      String?  // "A" ou "B"
+  createdAt DateTime @default(now())
+
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id])
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+}
+
+model Votacao {
+  id        String      @id @default(cuid())
+  tipo      TipoVotacao
+  createdAt DateTime    @default(now())
+
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id])
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+
+  votos VotoDestaque[]
+}
+
+model VotoDestaque {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  votacaoId String
+  votacao   Votacao @relation(fields: [votacaoId], references: [id])
+
+  votanteId String
+}
+
+model Resenha {
+  id        String   @id @default(cuid())
+  data      DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  partidaId String  @unique
+  partida   Partida @relation(fields: [partidaId], references: [id])
+
+  presencas ResenhaPresenca[]
+}
+
+model ResenhaPresenca {
+  id          String          @id @default(cuid())
+  categoria   CategoriaResenha
+  valorDevido Float
+  pago        Boolean         @default(false)
+  dataPagamento DateTime?
+  createdAt   DateTime        @default(now())
+
+  resenhaId String
+  resenha   Resenha @relation(fields: [resenhaId], references: [id])
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+
+  @@unique([resenhaId, jogadorPeladaId])
+}
+
+model Pagamento {
+  id            String       @id @default(cuid())
+  tipo          TipoPagamento
+  mes           Int?
+  ano           Int?
+  valor         Float
+  pago          Boolean      @default(false)
+  dataPagamento DateTime?
+  createdAt     DateTime     @default(now())
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+}
+
+enum TipoJogador {
+  MENSALISTA
+  DIARISTA
+}
+
+enum Posicao {
+  LINHA
+  GOLEIRO
+}
+
+enum StatusPartida {
+  AGENDADA
+  CONFIRMADA
+  REALIZADA
+  CANCELADA
+}
+
+enum StatusPresenca {
+  CONFIRMADO
+  AUSENTE
+  LISTA_ESPERA
+}
+
+enum TipoVotacao {
+  DESTAQUE
+  AGUA_SALSICHA
+}
+
+enum CategoriaResenha {
+  BEBE
+  NAO_BEBE
+  GOLEIRO_BEBE
+}
+
+enum TipoPagamento {
+  MENSALIDADE
+  DIARIA
+}
