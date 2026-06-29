@@ -32,7 +32,7 @@ export async function criarUsuario(req: AuthRequest, res: Response) {
 
   const hash = await bcrypt.hash(senha, 10);
   const usuario = await prisma.usuario.create({
-    data: { nome, email, senha: hash, role, peladaId, jogadorPeladaId: typeof jogadorPeladaId === "string" ? jogadorPeladaId : null },
+    data: { nome, email, senha: hash, role, peladaId, jogadorPeladaId: jogadorPeladaId || null },
     include: { jogadorPelada: { include: { jogador: true } } },
   });
 
