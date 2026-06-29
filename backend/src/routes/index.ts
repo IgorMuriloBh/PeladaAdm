@@ -9,6 +9,7 @@ import * as fin from "../controllers/financeiro.controller";
 import * as gols from "../controllers/gols.controller";
 import * as stats from "../controllers/estatisticas.controller";
 import * as votacao from "../controllers/votacao.controller";
+import * as sorteio from "../controllers/sorteio.controller";
 
 const router = Router();
 
@@ -41,6 +42,10 @@ router.put("/peladas/:peladaId/partidas/:id", authMiddleware, partida.atualizar)
 router.post("/peladas/:peladaId/partidas/:id/presencas", authMiddleware, partida.confirmarPresenca);
 router.delete("/peladas/:peladaId/partidas/:id/presencas/:presencaId", authMiddleware, partida.removerPresenca);
 router.post("/peladas/:peladaId/partidas/:id/lembretes", authMiddleware, partida.enviarLembretes);
+
+// Sorteio e Avaliação
+router.post("/peladas/:peladaId/partidas/:partidaId/sortear", authMiddleware, sorteio.sortearTimes);
+router.patch("/peladas/:peladaId/presencas/:presencaId/avaliar", authMiddleware, sorteio.avaliarJogador);
 
 // Destaques / Votações
 router.get("/peladas/:peladaId/destaques", authMiddleware, votacao.listarVotacoes);

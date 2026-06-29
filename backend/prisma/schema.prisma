@@ -121,6 +121,8 @@ model Presenca {
   id        String        @id @default(cuid())
   status    StatusPresenca @default(CONFIRMADO)
   posicaoFila Int?
+  time      String?       // "A" ou "B" — definido no sorteio
+  notaJogo  Int?          // 1-5 — avaliação pós-jogo
   createdAt DateTime      @default(now())
 
   partidaId String
