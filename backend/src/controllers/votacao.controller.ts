@@ -1,15 +1,12 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
-
-async function getPelada(peladaId: string, adminId: string) {
-  return prisma.pelada.findFirst({ where: { id: peladaId, adminId } });
-}
+import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 
 export async function listarVotacoes(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+  const peladaId = getPeladaId(req);
 
   const votacoes = await prisma.votacao.findMany({
     where: { partida: { peladaId } },
@@ -23,8 +20,7 @@ export async function listarVotacoes(req: AuthRequest, res: Response) {
 }
 
 export async function registrarVotacao(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.partidaId as string;
@@ -37,7 +33,7 @@ export async function registrarVotacao(req: AuthRequest, res: Response) {
     res.status(400).json({ error: "tipo deve ser DESTAQUE ou AGUA_SALSICHA" }); return;
   }
 
-  // remove votação anterior do mesmo tipo na mesma partida (só 1 destaque e 1 água por jogo)
+  // remove votação anterior do mesmo tipo na mesma partida
   await prisma.votacao.deleteMany({ where: { partidaId, tipo } });
 
   const votacao = await prisma.votacao.create({
@@ -48,8 +44,7 @@ export async function registrarVotacao(req: AuthRequest, res: Response) {
 }
 
 export async function removerVotacao(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   await prisma.votacao.delete({ where: { id: req.params.votacaoId as string } });
@@ -57,8 +52,7 @@ export async function removerVotacao(req: AuthRequest, res: Response) {
 }
 
 export async function votacoesPorPartida(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const votacoes = await prisma.votacao.findMany({

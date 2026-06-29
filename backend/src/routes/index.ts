@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth";
+import { authMiddleware, usuarioMiddleware, requireRole } from "../middlewares/auth";
 import { upload } from "../middlewares/upload";
 import * as auth from "../controllers/auth.controller";
 import * as pelada from "../controllers/pelada.controller";
@@ -10,78 +10,113 @@ import * as gols from "../controllers/gols.controller";
 import * as stats from "../controllers/estatisticas.controller";
 import * as votacao from "../controllers/votacao.controller";
 import * as sorteio from "../controllers/sorteio.controller";
+import * as usuario from "../controllers/usuario.controller";
 
 const router = Router();
 
-// Auth
+// ── Auth ──────────────────────────────────────────────────────────────────
 router.post("/auth/register", auth.register);
 router.post("/auth/login", auth.login);
 router.get("/auth/me", authMiddleware, auth.me);
+router.post("/auth/usuario/login", auth.loginUsuario);
+router.get("/auth/usuario/me", usuarioMiddleware, auth.meUsuario);
 
-// Peladas
+// ── Peladas (Admin) ────────────────────────────────────────────────────────
 router.get("/peladas", authMiddleware, pelada.listar);
 router.get("/peladas/:id", authMiddleware, pelada.buscar);
 router.post("/peladas", authMiddleware, upload.single("logo"), pelada.criar);
 router.put("/peladas/:id", authMiddleware, upload.single("logo"), pelada.atualizar);
 router.put("/peladas/:id/financeiro", authMiddleware, pelada.atualizarFinanceiro);
 
-// Jogadores
+// ── Jogadores (Admin) ─────────────────────────────────────────────────────
 const fotoFields = upload.fields([{ name: "fotoNormal", maxCount: 1 }, { name: "fotoFeliz", maxCount: 1 }, { name: "fotoTriste", maxCount: 1 }]);
 router.get("/peladas/:peladaId/jogadores", authMiddleware, jogador.listar);
 router.post("/peladas/:peladaId/jogadores", authMiddleware, fotoFields, jogador.criar);
 router.put("/peladas/:peladaId/jogadores/:id", authMiddleware, fotoFields, jogador.atualizar);
 
-// Partidas / Agenda
+// ── Usuários (Admin cria/gerencia) ─────────────────────────────────────────
+router.get("/peladas/:peladaId/usuarios", authMiddleware, usuario.listarUsuarios);
+router.post("/peladas/:peladaId/usuarios", authMiddleware, usuario.criarUsuario);
+router.put("/peladas/:peladaId/usuarios/:id", authMiddleware, usuario.atualizarUsuario);
+router.delete("/peladas/:peladaId/usuarios/:id", authMiddleware, usuario.removerUsuario);
+
+// ── Partidas / Agenda (Admin) ─────────────────────────────────────────────
 router.get("/peladas/:peladaId/partidas", authMiddleware, partida.listar);
 router.get("/peladas/:peladaId/partidas/:id", authMiddleware, partida.buscar);
 router.post("/peladas/:peladaId/partidas", authMiddleware, partida.criar);
 router.post("/peladas/:peladaId/partidas/gerar", authMiddleware, partida.gerarProximas);
 router.put("/peladas/:peladaId/partidas/:id", authMiddleware, partida.atualizar);
 
-// Presenças
+// ── Presenças (Admin) ─────────────────────────────────────────────────────
 router.post("/peladas/:peladaId/partidas/:id/presencas", authMiddleware, partida.confirmarPresenca);
 router.delete("/peladas/:peladaId/partidas/:id/presencas/:presencaId", authMiddleware, partida.removerPresenca);
 router.post("/peladas/:peladaId/partidas/:id/lembretes", authMiddleware, partida.enviarLembretes);
 
-// Sorteio e Avaliação
+// ── Sorteio e Avaliação (Admin) ───────────────────────────────────────────
 router.post("/peladas/:peladaId/partidas/:partidaId/sortear", authMiddleware, sorteio.sortearTimes);
 router.patch("/peladas/:peladaId/presencas/:presencaId/avaliar", authMiddleware, sorteio.avaliarJogador);
 
-// Destaques / Votações
+// ── Destaques / Votações (Admin) ──────────────────────────────────────────
 router.get("/peladas/:peladaId/destaques", authMiddleware, votacao.listarVotacoes);
 router.get("/peladas/:peladaId/partidas/:partidaId/votacoes", authMiddleware, votacao.votacoesPorPartida);
 router.post("/peladas/:peladaId/partidas/:partidaId/votacoes", authMiddleware, votacao.registrarVotacao);
 router.delete("/peladas/:peladaId/votacoes/:votacaoId", authMiddleware, votacao.removerVotacao);
 
-// Gols / Placar
+// ── Gols / Placar (Admin) ─────────────────────────────────────────────────
 router.get("/peladas/:peladaId/partidas/:partidaId/gols", authMiddleware, gols.listarGols);
 router.post("/peladas/:peladaId/partidas/:partidaId/gols", authMiddleware, gols.registrarGol);
 router.delete("/peladas/:peladaId/partidas/:partidaId/gols/:golId", authMiddleware, gols.removerGol);
 router.patch("/peladas/:peladaId/partidas/:partidaId/placar", authMiddleware, gols.atualizarPlacar);
 
-// Estatísticas e Artilharia
+// ── Estatísticas e Artilharia (Admin) ────────────────────────────────────
 router.get("/peladas/:peladaId/estatisticas", authMiddleware, stats.estatisticasJogadores);
 router.get("/peladas/:peladaId/artilharia", authMiddleware, stats.artilharia);
 
-// Financeiro — Mensalidades
+// ── Financeiro (Admin) ────────────────────────────────────────────────────
 router.get("/peladas/:peladaId/financeiro/mensalidades", authMiddleware, fin.listarMensalidades);
 router.post("/peladas/:peladaId/financeiro/mensalidades/gerar", authMiddleware, fin.gerarMensalidades);
 router.patch("/peladas/:peladaId/financeiro/mensalidades/:id", authMiddleware, fin.marcarMensalidade);
 router.get("/peladas/:peladaId/financeiro/inadimplentes", authMiddleware, fin.inadimplentes);
-
-// Financeiro — Diárias
 router.post("/peladas/:peladaId/partidas/:partidaId/diaria", authMiddleware, fin.gerarDiaria);
 router.get("/peladas/:peladaId/financeiro/diarias", authMiddleware, fin.listarDiarias);
 router.patch("/peladas/:peladaId/financeiro/diarias/:id", authMiddleware, fin.marcarDiaria);
-
-// Financeiro — Resenha
 router.post("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fin.criarResenha);
 router.get("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fin.buscarResenha);
 router.post("/peladas/:peladaId/resenha/:resenhaId/participantes", authMiddleware, fin.adicionarParticipanteResenha);
 router.patch("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.marcarPagamentoResenha);
 router.delete("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.removerParticipanteResenha);
-
-// Financeiro — Resumo
 router.get("/peladas/:peladaId/financeiro/resumo", authMiddleware, fin.resumo);
+
+// ════════════════════════════════════════════════════════════════════════════
+// PORTAL — rotas para Jogador / Operador / Administrador (token de usuario)
+// O peladaId vem do JWT, extraído em cada controller
+// ════════════════════════════════════════════════════════════════════════════
+
+// Estatísticas (todos os perfis)
+router.get("/portal/estatisticas", usuarioMiddleware, stats.estatisticasJogadores);
+router.get("/portal/artilharia", usuarioMiddleware, stats.artilharia);
+router.get("/portal/destaques", usuarioMiddleware, votacao.listarVotacoes);
+
+// Partidas + Votação (todos os perfis)
+router.get("/portal/partidas", usuarioMiddleware, partida.listar);
+router.get("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.votacoesPorPartida);
+router.post("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.registrarVotacao);
+router.delete("/portal/votacoes/:votacaoId", usuarioMiddleware, votacao.removerVotacao);
+
+// Gols (Operador, Administrador)
+router.get("/portal/partidas/:partidaId/gols", usuarioMiddleware, gols.listarGols);
+router.post("/portal/partidas/:partidaId/gols", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), gols.registrarGol);
+router.delete("/portal/partidas/:partidaId/gols/:golId", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), gols.removerGol);
+
+// Jogadores (para listagem de gols/arte no portal)
+router.get("/portal/jogadores", usuarioMiddleware, jogador.listar);
+
+// Financeiro (Operador, Administrador)
+router.get("/portal/financeiro/mensalidades", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.listarMensalidades);
+router.patch("/portal/financeiro/mensalidades/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarMensalidade);
+router.get("/portal/financeiro/diarias", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.listarDiarias);
+router.patch("/portal/financeiro/diarias/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarDiaria);
+router.get("/portal/partidas/:partidaId/resenha", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.buscarResenha);
+router.patch("/portal/resenha/participantes/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarPagamentoResenha);
 
 export default router;

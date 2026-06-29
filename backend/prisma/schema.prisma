@@ -40,6 +40,7 @@ model Pelada {
   configuracaoFinanceira ConfiguracaoFinanceira?
   jogadores              JogadorPelada[]
   partidas               Partida[]
+  usuarios               Usuario[]
 }
 
 model ConfiguracaoFinanceira {
@@ -94,6 +95,7 @@ model JogadorPelada {
   resenhaPresencas ResenhaPresenca[]
   gols            Gol[]
   votacoes        Votacao[]
+  usuario         Usuario?
 
   @@unique([jogadorId, peladaId])
 }
@@ -251,4 +253,27 @@ enum CategoriaResenha {
 enum TipoPagamento {
   MENSALIDADE
   DIARIA
+}
+
+model Usuario {
+  id        String      @id @default(cuid())
+  nome      String
+  email     String      @unique
+  senha     String
+  role      RoleUsuario @default(JOGADOR)
+  ativo     Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  peladaId String
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+
+  jogadorPeladaId String? @unique
+  jogadorPelada   JogadorPelada? @relation(fields: [jogadorPeladaId], references: [id])
+}
+
+enum RoleUsuario {
+  ADMINISTRADOR
+  JOGADOR
+  OPERADOR
 }

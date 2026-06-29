@@ -1,20 +1,14 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
-
-async function getPelada(peladaId: string, adminId: string) {
-  return prisma.pelada.findFirst({
-    where: { id: peladaId, adminId },
-    include: { configuracaoFinanceira: true },
-  });
-}
+import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 
 export async function estatisticasJogadores(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+  const peladaId = getPeladaId(req);
 
-  const cfg = pelada.configuracaoFinanceira;
+  const cfg = (pelada as any).configuracaoFinanceira;
   const pts = {
     presenca: cfg?.pontoPresenca ?? 1,
     vitoria: cfg?.pontoVitoria ?? 3,
@@ -79,7 +73,6 @@ export async function estatisticasJogadores(req: AuthRequest, res: Response) {
     }
 
     const pontos = presencas * pts.presenca + vitorias * pts.vitoria + totalGols * pts.gol;
-
     return {
       jogadorPeladaId: jp.id,
       nome: jp.jogador.nome,
@@ -98,13 +91,12 @@ export async function estatisticasJogadores(req: AuthRequest, res: Response) {
 }
 
 export async function artilharia(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+  const peladaId = getPeladaId(req);
 
   const mes = req.query.mes ? Number(req.query.mes) : undefined;
   const ano = req.query.ano ? Number(req.query.ano) : undefined;
-
   const dateFilter = (mes || ano) ? {
     data: {
       ...(ano ? { gte: new Date(ano, (mes ?? 1) - 1, 1) } : {}),

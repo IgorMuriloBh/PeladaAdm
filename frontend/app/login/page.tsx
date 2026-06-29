@@ -19,8 +19,19 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, senha);
-      router.push("/dashboard");
+      const result = await login(email, senha);
+      if (result.tipo === "admin") {
+        router.push("/dashboard");
+      } else {
+        const role = result.role;
+        if (role === "ADMINISTRADOR") {
+          router.push("/portal/agenda");
+        } else if (role === "OPERADOR") {
+          router.push("/portal/financeiro");
+        } else {
+          router.push("/portal/estatisticas");
+        }
+      }
     } catch {
       toast.error("E-mail ou senha incorretos");
     } finally {
@@ -36,7 +47,7 @@ export default function LoginPage() {
             <span className="text-3xl">⚽</span>
           </div>
           <CardTitle className="text-2xl font-bold text-slate-900">Pelada ADM</CardTitle>
-          <CardDescription className="text-slate-500">Entre com sua conta para gerenciar a pelada</CardDescription>
+          <CardDescription className="text-slate-500">Entre com sua conta para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">

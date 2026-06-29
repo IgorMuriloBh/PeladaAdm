@@ -1,16 +1,14 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
+import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 
-async function getPelada(peladaId: string, adminId: string) {
-  return prisma.pelada.findFirst({ where: { id: peladaId, adminId }, include: { configuracaoFinanceira: true } });
-}
 
 // ─── MENSALIDADES ────────────────────────────────────────────────────────────
 
 export async function listarMensalidades(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const mes = req.query.mes ? Number(req.query.mes) : undefined;
@@ -30,13 +28,13 @@ export async function listarMensalidades(req: AuthRequest, res: Response) {
 }
 
 export async function gerarMensalidades(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const mes = Number(req.body.mes) || new Date().getMonth() + 1;
   const ano = Number(req.body.ano) || new Date().getFullYear();
-  const valor = pelada.configuracaoFinanceira?.mensalistaValor || 90;
+  const valor = (pelada as any).configuracaoFinanceira?.mensalistaValor || 90;
 
   const mensalistas = await prisma.jogadorPelada.findMany({
     where: { peladaId, tipo: "MENSALISTA", ativo: true },
@@ -56,8 +54,8 @@ export async function gerarMensalidades(req: AuthRequest, res: Response) {
 }
 
 export async function marcarMensalidade(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const id = req.params.id as string;
@@ -72,8 +70,8 @@ export async function marcarMensalidade(req: AuthRequest, res: Response) {
 }
 
 export async function inadimplentes(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const mes = Number(req.query.mes) || new Date().getMonth() + 1;
@@ -89,12 +87,12 @@ export async function inadimplentes(req: AuthRequest, res: Response) {
 // ─── DIÁRIAS ─────────────────────────────────────────────────────────────────
 
 export async function gerarDiaria(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.partidaId as string;
-  const valor = pelada.configuracaoFinanceira?.diaristaValor || 30;
+  const valor = (pelada as any).configuracaoFinanceira?.diaristaValor || 30;
 
   const presencas = await prisma.presenca.findMany({
     where: { partidaId, status: "CONFIRMADO", jogadorPelada: { peladaId, tipo: "DIARISTA" } },
@@ -118,8 +116,8 @@ export async function gerarDiaria(req: AuthRequest, res: Response) {
 }
 
 export async function listarDiarias(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const mes = req.query.mes ? Number(req.query.mes) : undefined;
@@ -134,8 +132,8 @@ export async function listarDiarias(req: AuthRequest, res: Response) {
 }
 
 export async function marcarDiaria(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const id = req.params.id as string;
@@ -151,8 +149,8 @@ export async function marcarDiaria(req: AuthRequest, res: Response) {
 // ─── RESENHA ─────────────────────────────────────────────────────────────────
 
 export async function criarResenha(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.partidaId as string;
@@ -167,8 +165,8 @@ export async function criarResenha(req: AuthRequest, res: Response) {
 }
 
 export async function buscarResenha(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const resenha = await prisma.resenha.findFirst({
@@ -185,15 +183,15 @@ export async function buscarResenha(req: AuthRequest, res: Response) {
 }
 
 export async function adicionarParticipanteResenha(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const resenhaId = req.params.resenhaId as string;
   const { jogadorPeladaId, categoria } = req.body;
   if (!jogadorPeladaId || !categoria) { res.status(400).json({ error: "jogadorPeladaId e categoria são obrigatórios" }); return; }
 
-  const cfg = pelada.configuracaoFinanceira;
+  const cfg = (pelada as any).configuracaoFinanceira;
   const valorMap: Record<string, number> = {
     BEBE: cfg?.resenhaBebe || 85,
     NAO_BEBE: cfg?.resenhaNaoBebe || 40,
@@ -214,8 +212,8 @@ export async function adicionarParticipanteResenha(req: AuthRequest, res: Respon
 }
 
 export async function marcarPagamentoResenha(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const id = req.params.id as string;
@@ -229,8 +227,8 @@ export async function marcarPagamentoResenha(req: AuthRequest, res: Response) {
 }
 
 export async function removerParticipanteResenha(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   await prisma.resenhaPresenca.delete({ where: { id: req.params.id as string } });
@@ -240,8 +238,8 @@ export async function removerParticipanteResenha(req: AuthRequest, res: Response
 // ─── RESUMO FINANCEIRO ────────────────────────────────────────────────────────
 
 export async function resumo(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const mes = Number(req.query.mes) || new Date().getMonth() + 1;

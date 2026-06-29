@@ -1,10 +1,11 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
+import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 
 export async function listar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await prisma.pelada.findFirst({ where: { id: peladaId, adminId: req.adminId as string } });
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const jogadores = await prisma.jogadorPelada.findMany({
@@ -16,8 +17,8 @@ export async function listar(req: AuthRequest, res: Response) {
 }
 
 export async function criar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await prisma.pelada.findFirst({ where: { id: peladaId, adminId: req.adminId as string } });
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const { nome, email, celular, tipo, posicao, nivel } = req.body;

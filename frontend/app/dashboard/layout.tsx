@@ -6,12 +6,17 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { admin, loading } = useAuth();
+  const { admin, tipo, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !admin) router.replace("/login");
-  }, [admin, loading, router]);
+    if (loading) return;
+    if (!admin && tipo !== "admin") {
+      // Usuário portal tentou acessar /dashboard → redireciona
+      if (tipo === "usuario") router.replace("/portal");
+      else router.replace("/login");
+    }
+  }, [admin, tipo, loading, router]);
 
   if (loading) {
     return (

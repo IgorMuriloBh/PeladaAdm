@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { Menu, X, LayoutDashboard, Users, CalendarDays, DollarSign, BarChart3, Trophy, Star, Settings, LogOut, Utensils, Tv2, ImagePlay } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, CalendarDays, DollarSign, BarChart3, Trophy, Star, Settings, LogOut, Utensils, Tv2, ImagePlay, UserCog } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/peladas", label: "Peladas", icon: Tv2 },
   { href: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/dashboard/jogadores", label: "Jogadores", icon: Users },
+  { href: "/dashboard/usuarios", label: "Usuários", icon: UserCog },
   { href: "/dashboard/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/dashboard/resenha", label: "Resenha", icon: Utensils },
   { href: "/dashboard/estatisticas", label: "Estatísticas", icon: BarChart3 },

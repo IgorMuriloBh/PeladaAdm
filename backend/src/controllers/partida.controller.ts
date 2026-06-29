@@ -1,16 +1,14 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
+import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 import { proximasOcorrencias } from "../utils/agenda";
 import { sendEmail, templateLembrete, templateVagaDisponivel } from "../lib/email";
 
-async function getPelada(peladaId: string, adminId: string) {
-  return prisma.pelada.findFirst({ where: { id: peladaId, adminId } });
-}
 
 export async function listar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidas = await prisma.partida.findMany({
@@ -25,8 +23,8 @@ export async function listar(req: AuthRequest, res: Response) {
 }
 
 export async function buscar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partida = await prisma.partida.findFirst({
@@ -43,8 +41,8 @@ export async function buscar(req: AuthRequest, res: Response) {
 }
 
 export async function criar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const { data, observacoes } = req.body;
@@ -57,8 +55,8 @@ export async function criar(req: AuthRequest, res: Response) {
 }
 
 export async function gerarProximas(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const quantidade = Number(req.query.quantidade) || 4;
@@ -76,8 +74,8 @@ export async function gerarProximas(req: AuthRequest, res: Response) {
 }
 
 export async function atualizar(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const { status, observacoes } = req.body;
@@ -89,8 +87,8 @@ export async function atualizar(req: AuthRequest, res: Response) {
 }
 
 export async function confirmarPresenca(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.id as string;
@@ -120,8 +118,8 @@ export async function confirmarPresenca(req: AuthRequest, res: Response) {
 }
 
 export async function removerPresenca(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.id as string;
@@ -164,8 +162,8 @@ export async function removerPresenca(req: AuthRequest, res: Response) {
 }
 
 export async function enviarLembretes(req: AuthRequest, res: Response) {
-  const peladaId = req.params.peladaId as string;
-  const pelada = await getPelada(peladaId, req.adminId as string);
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.id as string;
