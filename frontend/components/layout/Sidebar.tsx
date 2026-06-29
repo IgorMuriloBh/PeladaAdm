@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, CalendarDays, DollarSign,
-  BarChart3, Trophy, Star, Settings, LogOut, Utensils, Tv2
+  BarChart3, Trophy, Star, Settings, LogOut, Utensils, Tv2, ImagePlay
 } from "lucide-react";
 
 const nav = [
@@ -18,6 +18,7 @@ const nav = [
   { href: "/dashboard/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/dashboard/artilharia", label: "Artilharia", icon: Trophy },
   { href: "/dashboard/destaques", label: "Destaques", icon: Star },
+  { href: "/dashboard/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
 ];
 
