@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "prisma generate && nodemon --exec 'ts-node --transpile-only src/server.ts'",
     "dev:quick": "nodemon --exec 'ts-node --transpile-only src/server.ts'",
-    "build": "tsc",
-    "start": "node dist/server.js"
+    "build": "prisma generate && tsc",
+    "start": "prisma migrate deploy && node dist/server.js",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
