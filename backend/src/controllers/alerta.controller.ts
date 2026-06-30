@@ -26,7 +26,13 @@ export async function salvarConfigAlerta(req: AuthRequest, res: Response) {
   const pelada = await prisma.pelada.findFirst({ where: { id: peladaId, adminId: req.adminId as string } });
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
-  const { ativo, smtpHost, smtpPort, smtpUser, smtpPass, emailRemetente, nomeRemetente, alertaNovaPartida, alertaEncerramentoPelada } = req.body;
+  const { ativo, smtpPort, alertaNovaPartida, alertaEncerramentoPelada } = req.body;
+  // Trim em todos os campos de texto para evitar espaços acidentais
+  const smtpHost = (req.body.smtpHost || "").trim();
+  const smtpUser = (req.body.smtpUser || "").trim();
+  const smtpPass = (req.body.smtpPass || "").trim();
+  const emailRemetente = (req.body.emailRemetente || "").trim();
+  const nomeRemetente = (req.body.nomeRemetente || "").trim();
 
   const data: Record<string, unknown> = {
     ativo, smtpHost, smtpPort: smtpPort ? Number(smtpPort) : undefined,

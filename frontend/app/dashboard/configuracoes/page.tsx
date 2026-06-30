@@ -85,7 +85,16 @@ export default function ConfiguracoesPage() {
   async function salvarAlerta(e: React.FormEvent) {
     e.preventDefault();
     setLoadingAlerta(true);
-    try { await api.put(`/peladas/${peladaId}/alertas`, alertaCfg); toast.success("Configuração de alertas salva!"); }
+    // Trim preventivo em todos os campos de texto
+    const payload = {
+      ...alertaCfg,
+      smtpHost: alertaCfg.smtpHost.trim(),
+      smtpUser: alertaCfg.smtpUser.trim(),
+      smtpPass: alertaCfg.smtpPass.trim(),
+      emailRemetente: alertaCfg.emailRemetente.trim(),
+      nomeRemetente: alertaCfg.nomeRemetente.trim(),
+    };
+    try { await api.put(`/peladas/${peladaId}/alertas`, payload); toast.success("Configuração de alertas salva!"); }
     catch (err: any) { toast.error(err.response?.data?.error || "Erro ao salvar"); }
     finally { setLoadingAlerta(false); }
   }
