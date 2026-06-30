@@ -116,7 +116,10 @@ router.get("/portal/financeiro/mensalidades", usuarioMiddleware, requireRole("OP
 router.patch("/portal/financeiro/mensalidades/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarMensalidade);
 router.get("/portal/financeiro/diarias", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.listarDiarias);
 router.patch("/portal/financeiro/diarias/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarDiaria);
+router.post("/portal/partidas/:partidaId/resenha", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.criarResenha);
 router.get("/portal/partidas/:partidaId/resenha", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.buscarResenha);
+router.post("/portal/resenha/:resenhaId/participantes", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.adicionarParticipanteResenha);
 router.patch("/portal/resenha/participantes/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarPagamentoResenha);
+router.delete("/portal/resenha/participantes/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.removerParticipanteResenha);
 
 export default router;
