@@ -93,8 +93,14 @@ export default function ConfiguracoesPage() {
   async function testarEmail() {
     if (!emailTeste) { toast.error("Informe um email para teste"); return; }
     setLoadingTeste(true);
-    try { await api.post(`/peladas/${peladaId}/alertas/testar`, { emailDestino: emailTeste }); toast.success("Email de teste enviado!"); }
-    catch (err: any) { toast.error(err.response?.data?.error || "Erro ao enviar email de teste"); }
+    try {
+      await api.post(`/peladas/${peladaId}/alertas/testar`, { emailDestino: emailTeste });
+      toast.success("Email de teste enviado com sucesso! Verifique a caixa de entrada.");
+    } catch (err: any) {
+      const msg = err.response?.data?.error || "Erro ao enviar email de teste";
+      const detalhe = err.response?.data?.detalhe;
+      toast.error(msg, { description: detalhe ? `Detalhe: ${detalhe}` : undefined, duration: 8000 });
+    }
     finally { setLoadingTeste(false); }
   }
 

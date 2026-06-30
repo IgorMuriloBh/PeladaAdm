@@ -54,10 +54,20 @@ export async function testarEmail(req: AuthRequest, res: Response) {
   const { emailDestino } = req.body;
   if (!emailDestino) { res.status(400).json({ error: "emailDestino é obrigatório" }); return; }
 
+  // Valida campos obrigatórios antes de tentar conectar
+  const camposFaltando = [];
+  if (!cfg.smtpHost) camposFaltando.push("Host SMTP");
+  if (!cfg.smtpUser) camposFaltando.push("Usuário SMTP");
+  if (!cfg.smtpPass) camposFaltando.push("Senha SMTP");
+  if (camposFaltando.length > 0) {
+    res.status(400).json({ error: `Campos obrigatórios não preenchidos: ${camposFaltando.join(", ")}. Salve a configuração antes de testar.` });
+    return;
+  }
+
   try {
     const smtpCfg: SmtpConfig = {
       host: cfg.smtpHost, port: cfg.smtpPort, user: cfg.smtpUser, pass: cfg.smtpPass,
-      remetente: cfg.emailRemetente, nomeRemetente: cfg.nomeRemetente,
+      remetente: cfg.emailRemetente || cfg.smtpUser, nomeRemetente: cfg.nomeRemetente,
     };
     await sendEmail({
       to: emailDestino,
@@ -66,7 +76,20 @@ export async function testarEmail(req: AuthRequest, res: Response) {
     }, smtpCfg);
     res.json({ ok: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || "Erro ao enviar email" });
+    const msg: string = e.message || "";
+    let erro = msg;
+    if (msg.includes("ENOTFOUND")) {
+      erro = `Não foi possível resolver o servidor "${cfg.smtpHost}". Verifique o Host SMTP e se há conexão com a internet.`;
+    } else if (msg.includes("ECONNREFUSED")) {
+      erro = `Conexão recusada em ${cfg.smtpHost}:${cfg.smtpPort}. Verifique o host e a porta SMTP.`;
+    } else if (msg.includes("ETIMEDOUT") || msg.includes("ESOCKETTIMEDOUT")) {
+      erro = `Timeout ao conectar em ${cfg.smtpHost}:${cfg.smtpPort}. Verifique se a porta não está bloqueada por firewall.`;
+    } else if (msg.includes("535") || msg.includes("534") || msg.toLowerCase().includes("auth")) {
+      erro = `Falha de autenticação. Verifique usuário e senha. Para Gmail, use uma Senha de App (não a senha normal da conta).`;
+    } else if (msg.includes("STARTTLS") || msg.includes("TLS")) {
+      erro = `Erro de TLS/SSL. Tente a porta 465 com SSL ou 587 com STARTTLS.`;
+    }
+    res.status(500).json({ error: erro, detalhe: msg });
   }
 }
 
