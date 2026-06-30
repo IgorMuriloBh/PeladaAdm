@@ -38,6 +38,7 @@ model Pelada {
   admin   Admin  @relation(fields: [adminId], references: [id])
 
   configuracaoFinanceira ConfiguracaoFinanceira?
+  configuracaoAlerta     ConfiguracaoAlerta?
   jogadores              JogadorPelada[]
   partidas               Partida[]
   usuarios               Usuario[]
@@ -90,12 +91,13 @@ model JogadorPelada {
   peladaId String
   pelada   Pelada @relation(fields: [peladaId], references: [id])
 
-  presencas       Presenca[]
-  pagamentos      Pagamento[]
+  presencas        Presenca[]
+  pagamentos       Pagamento[]
   resenhaPresencas ResenhaPresenca[]
-  gols            Gol[]
-  votacoes        Votacao[]
-  usuario         Usuario?
+  gols             Gol[]
+  votacoes         Votacao[]
+  usuario          Usuario?
+  presencaTokens   PresencaToken[]
 
   @@unique([jogadorId, peladaId])
 }
@@ -113,10 +115,11 @@ model Partida {
   peladaId String
   pelada   Pelada @relation(fields: [peladaId], references: [id])
 
-  presencas  Presenca[]
-  gols       Gol[]
-  votacoes   Votacao[]
-  resenha    Resenha?
+  presencas      Presenca[]
+  gols           Gol[]
+  votacoes       Votacao[]
+  resenha        Resenha?
+  presencaTokens PresencaToken[]
 }
 
 model Presenca {
@@ -125,6 +128,9 @@ model Presenca {
   posicaoFila Int?
   time      String?       // "A" ou "B" — definido no sorteio
   notaJogo  Int?          // 1-5 — avaliação pós-jogo
+  // Intenção de resenha (capturada via link de confirmação)
+  interesseResenha  Boolean?
+  categoriaResenha  CategoriaResenha?
   createdAt DateTime      @default(now())
 
   partidaId String
@@ -276,4 +282,35 @@ enum RoleUsuario {
   ADMINISTRADOR
   JOGADOR
   OPERADOR
+}
+
+model ConfiguracaoAlerta {
+  id                       String  @id @default(cuid())
+  ativo                    Boolean @default(false)
+  smtpHost                 String  @default("")
+  smtpPort                 Int     @default(587)
+  smtpUser                 String  @default("")
+  smtpPass                 String  @default("")
+  emailRemetente           String  @default("")
+  nomeRemetente            String  @default("Pelada ADM")
+  alertaNovaPartida        Boolean @default(true)
+  alertaEncerramentoPelada Boolean @default(true)
+  updatedAt                DateTime @updatedAt
+
+  peladaId String @unique
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+}
+
+model PresencaToken {
+  id              String   @id @default(cuid())
+  token           String   @unique @default(cuid())
+  usado           Boolean  @default(false)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  jogadorPeladaId String
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id])
 }

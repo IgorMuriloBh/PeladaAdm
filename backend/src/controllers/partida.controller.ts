@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 import { proximasOcorrencias } from "../utils/agenda";
 import { sendEmail, templateLembrete, templateVagaDisponivel } from "../lib/email";
+import { dispararAlertaNovaPartida, dispararAlertaEncerramentoPelada } from "./alerta.controller";
 
 
 export async function listar(req: AuthRequest, res: Response) {
@@ -52,6 +53,9 @@ export async function criar(req: AuthRequest, res: Response) {
     data: { peladaId, data: new Date(data as string), observacoes: observacoes as string | undefined },
   });
   res.status(201).json(partida);
+
+  // Dispara alerta em background — não bloqueia a resposta
+  dispararAlertaNovaPartida(peladaId, partida.id).catch(() => {});
 }
 
 export async function gerarProximas(req: AuthRequest, res: Response) {
@@ -79,11 +83,17 @@ export async function atualizar(req: AuthRequest, res: Response) {
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const { status, observacoes } = req.body;
+  const anteriorPartida = await prisma.partida.findUnique({ where: { id: req.params.id as string } });
   const partida = await prisma.partida.update({
     where: { id: req.params.id as string },
     data: { ...(status && { status }), ...(observacoes !== undefined && { observacoes }) },
   });
   res.json(partida);
+
+  // Dispara alerta de encerramento quando status muda para REALIZADA
+  if (status === "REALIZADA" && anteriorPartida?.status !== "REALIZADA") {
+    dispararAlertaEncerramentoPelada(peladaId, partida.id).catch(() => {});
+  }
 }
 
 export async function confirmarPresenca(req: AuthRequest, res: Response) {

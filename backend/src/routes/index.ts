@@ -11,6 +11,7 @@ import * as stats from "../controllers/estatisticas.controller";
 import * as votacao from "../controllers/votacao.controller";
 import * as sorteio from "../controllers/sorteio.controller";
 import * as usuario from "../controllers/usuario.controller";
+import * as alerta from "../controllers/alerta.controller";
 
 const router = Router();
 
@@ -86,6 +87,15 @@ router.post("/peladas/:peladaId/resenha/:resenhaId/participantes", authMiddlewar
 router.patch("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.marcarPagamentoResenha);
 router.delete("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.removerParticipanteResenha);
 router.get("/peladas/:peladaId/financeiro/resumo", authMiddleware, fin.resumo);
+
+// ── Alertas / Email (Admin) ───────────────────────────────────────────────
+router.get("/peladas/:peladaId/alertas", authMiddleware, alerta.buscarConfigAlerta);
+router.put("/peladas/:peladaId/alertas", authMiddleware, alerta.salvarConfigAlerta);
+router.post("/peladas/:peladaId/alertas/testar", authMiddleware, alerta.testarEmail);
+
+// ── Confirmação de presença via token (pública) ───────────────────────────
+router.get("/confirmar/:token", alerta.buscarToken);
+router.post("/confirmar/:token", alerta.confirmarViaToken);
 
 // ════════════════════════════════════════════════════════════════════════════
 // PORTAL — rotas para Jogador / Operador / Administrador (token de usuario)
