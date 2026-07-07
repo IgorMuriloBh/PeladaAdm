@@ -17,7 +17,7 @@ interface AuthCtx {
   token: string | null;
   tipo: "admin" | "usuario" | null;
   loading: boolean;
-  login: (email: string, senha: string) => Promise<{ tipo: "admin" | "usuario"; role?: string }>;
+  login: (email: string, senha: string) => Promise<{ tipo: "admin" | "usuario"; role?: string; precisaTrocarSenha?: boolean }>;
   logout: () => void;
 }
 
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  async function login(email: string, senha: string): Promise<{ tipo: "admin" | "usuario"; role?: string }> {
+  async function login(email: string, senha: string): Promise<{ tipo: "admin" | "usuario"; role?: string; precisaTrocarSenha?: boolean }> {
     // Tenta admin primeiro
     try {
       const { data } = await api.post("/auth/login", { email, senha });
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTipo("usuario");
       setUsuario(data.usuario);
       setAdmin(null);
-      return { tipo: "usuario", role: data.usuario.role };
+      return { tipo: "usuario", role: data.usuario.role, precisaTrocarSenha: data.precisaTrocarSenha };
     }
   }
 

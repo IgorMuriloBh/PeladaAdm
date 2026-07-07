@@ -57,7 +57,11 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (!loading && tipo !== "usuario") {
       router.push("/login");
     }
-  }, [loading, tipo, router]);
+    // Senha padrão ainda não trocada — força criação da senha pessoal
+    if (!loading && (usuario as any)?.precisaTrocarSenha) {
+      router.push("/trocar-senha");
+    }
+  }, [loading, tipo, usuario, router]);
 
   if (loading || !usuario) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><p className="text-slate-400">Carregando...</p></div>;

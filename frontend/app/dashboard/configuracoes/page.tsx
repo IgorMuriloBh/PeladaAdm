@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Settings, Bell, DollarSign } from "lucide-react";
+import { Settings, Bell, DollarSign, FileSpreadsheet, Download, Upload } from "lucide-react";
 
 interface ConfigFinanceira {
   mensalistaValor: number; diaristaValor: number;
@@ -26,8 +26,15 @@ const TAB_LABELS = [
   { key: "geral", label: "Geral", icon: Settings },
   { key: "financeiro", label: "Financeiro", icon: DollarSign },
   { key: "alertas", label: "Alertas", icon: Bell },
+  { key: "importar", label: "Importar", icon: FileSpreadsheet },
 ] as const;
-type Tab = "geral" | "financeiro" | "alertas";
+type Tab = "geral" | "financeiro" | "alertas" | "importar";
+
+interface ResultadoImportacao {
+  processados: number; jogadoresCriados: number; usuariosCriados: number;
+  golsLancados: number; destaquesLancados: number; aguasLancadas: number;
+  erros: string[];
+}
 
 export default function ConfiguracoesPage() {
   const [peladas, setPeladas] = useState<Pelada[]>([]);
@@ -38,7 +45,10 @@ export default function ConfiguracoesPage() {
     resenhaBebe: 85, resenhaNaoBebe: 40, resenhaGoleiro: 40,
     pontoPresenca: 1, pontoVitoria: 3, pontoGol: 1, pontoDestaque: 5, pontoAguaSalsicha: -3,
   });
-  const [formPelada, setFormPelada] = useState({ horario: "", maxJogadores: "", horaAbreLista: "", horaFechaLista: "" });
+  const [formPelada, setFormPelada] = useState({ horario: "", maxJogadores: "", horaAbreLista: "", horaFechaLista: "", senhaPadrao: "senha001" });
+  const [arquivoImport, setArquivoImport] = useState<File | null>(null);
+  const [loadingImport, setLoadingImport] = useState(false);
+  const [resultadoImport, setResultadoImport] = useState<ResultadoImportacao | null>(null);
   const [alertaCfg, setAlertaCfg] = useState<ConfigAlerta>({
     ativo: false, smtpHost: "", smtpPort: 587, smtpUser: "", smtpPass: "",
     emailRemetente: "", nomeRemetente: "Pelada ADM",
@@ -57,7 +67,7 @@ export default function ConfiguracoesPage() {
   useEffect(() => {
     if (!peladaId) return;
     api.get(`/peladas/${peladaId}`).then(r => {
-      setFormPelada({ horario: r.data.horario, maxJogadores: String(r.data.maxJogadores), horaAbreLista: r.data.horaAbreLista, horaFechaLista: r.data.horaFechaLista });
+      setFormPelada({ horario: r.data.horario, maxJogadores: String(r.data.maxJogadores), horaAbreLista: r.data.horaAbreLista, horaFechaLista: r.data.horaFechaLista, senhaPadrao: r.data.senhaPadrao || "senha001" });
       if (r.data.configuracaoFinanceira) {
         const c = r.data.configuracaoFinanceira;
         setCfg({ mensalistaValor: c.mensalistaValor, diaristaValor: c.diaristaValor, resenhaBebe: c.resenhaBebe, resenhaNaoBebe: c.resenhaNaoBebe, resenhaGoleiro: c.resenhaGoleiro, pontoPresenca: c.pontoPresenca, pontoVitoria: c.pontoVitoria, pontoGol: c.pontoGol, pontoDestaque: c.pontoDestaque, pontoAguaSalsicha: c.pontoAguaSalsicha });
@@ -77,9 +87,37 @@ export default function ConfiguracoesPage() {
   async function salvarPelada(e: React.FormEvent) {
     e.preventDefault();
     setLoadingPelada(true);
-    try { await api.put(`/peladas/${peladaId}`, { horario: formPelada.horario, maxJogadores: Number(formPelada.maxJogadores), horaAbreLista: formPelada.horaAbreLista, horaFechaLista: formPelada.horaFechaLista }); toast.success("Configurações gerais salvas!"); }
+    try { await api.put(`/peladas/${peladaId}`, { horario: formPelada.horario, maxJogadores: Number(formPelada.maxJogadores), horaAbreLista: formPelada.horaAbreLista, horaFechaLista: formPelada.horaFechaLista, senhaPadrao: formPelada.senhaPadrao.trim() }); toast.success("Configurações gerais salvas!"); }
     catch (err: any) { toast.error(err.response?.data?.error || "Erro ao salvar"); }
     finally { setLoadingPelada(false); }
+  }
+
+  async function baixarModelo() {
+    try {
+      const r = await api.get(`/peladas/${peladaId}/importacao/modelo`, { responseType: "blob" });
+      const url = URL.createObjectURL(r.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "modelo-importacao-jogadores.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error("Erro ao baixar modelo"); }
+  }
+
+  async function importarPlanilha() {
+    if (!arquivoImport) { toast.error("Selecione o arquivo da planilha"); return; }
+    setLoadingImport(true);
+    setResultadoImport(null);
+    try {
+      const fd = new FormData();
+      fd.append("planilha", arquivoImport);
+      const r = await api.post(`/peladas/${peladaId}/importacao`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setResultadoImport(r.data);
+      if (r.data.erros.length === 0) toast.success(`Importação concluída: ${r.data.processados} jogadores processados!`);
+      else toast.warning(`Importação com ${r.data.erros.length} erro(s). Veja os detalhes abaixo.`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Erro ao importar planilha");
+    } finally { setLoadingImport(false); }
   }
 
   async function salvarAlerta(e: React.FormEvent) {
@@ -171,6 +209,11 @@ export default function ConfiguracoesPage() {
                 <div className="space-y-1.5"><Label>Máx. jogadores</Label><Input type="number" min="1" value={formPelada.maxJogadores} onChange={e => setFormPelada(f => ({ ...f, maxJogadores: e.target.value }))} /></div>
                 <div className="space-y-1.5"><Label>Abre lista</Label><Input type="time" value={formPelada.horaAbreLista} onChange={e => setFormPelada(f => ({ ...f, horaAbreLista: e.target.value }))} /></div>
                 <div className="space-y-1.5"><Label>Fecha lista</Label><Input type="time" value={formPelada.horaFechaLista} onChange={e => setFormPelada(f => ({ ...f, horaFechaLista: e.target.value }))} /></div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Senha padrão para novos usuários</Label>
+                  <Input value={formPelada.senhaPadrao} onChange={e => setFormPelada(f => ({ ...f, senhaPadrao: e.target.value }))} placeholder="senha001" />
+                  <p className="text-xs text-slate-400">Atribuída automaticamente a novos usuários. No primeiro login, o sistema obriga a criação de uma senha pessoal.</p>
+                </div>
               </div>
               <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loadingPelada}>{loadingPelada ? "Salvando..." : "Salvar configurações gerais"}</Button>
             </form>
@@ -309,6 +352,82 @@ export default function ConfiguracoesPage() {
             </Card>
           )}
         </form>
+      )}
+
+      {/* ── Aba Importar ───────────────────────────────────────────────────── */}
+      {tab === "importar" && (
+        <div className="space-y-4">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-slate-500" /> Importação de jogadores em massa
+              </CardTitle>
+              <p className="text-xs text-slate-400">
+                Importe uma planilha com os jogadores e o histórico do ano (gols, destaques e águas de salsicha).
+                O histórico é lançado em uma pelada com data 01/01 do ano corrente.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Passo 1: baixar modelo */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-slate-700 mb-1">1. Baixe o modelo padrão</p>
+                <p className="text-xs text-slate-400 mb-3">Use este modelo como base. Colunas: Nome, Email, Celular, Tipo (MENSALISTA/DIARISTA), Posicao (LINHA/GOLEIRO), Gols, Destaques, AguaSalsicha.</p>
+                <Button type="button" variant="outline" onClick={baixarModelo} className="gap-2">
+                  <Download className="w-4 h-4" /> Baixar modelo (.xlsx)
+                </Button>
+              </div>
+
+              {/* Passo 2: enviar planilha */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-slate-700 mb-1">2. Envie a planilha preenchida</p>
+                <p className="text-xs text-slate-400 mb-3">
+                  Jogadores não cadastrados serão criados automaticamente com usuário e senha padrão ({formPelada.senhaPadrao || "senha001"}).
+                  Re-importar a mesma planilha atualiza o histórico sem duplicar.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="file" accept=".xlsx,.xls,.csv"
+                    onChange={e => setArquivoImport(e.target.files?.[0] || null)}
+                    className="flex-1 text-sm text-slate-600 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:text-xs file:font-semibold file:cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white"
+                  />
+                  <Button type="button" onClick={importarPlanilha} disabled={loadingImport || !arquivoImport} className="bg-green-600 hover:bg-green-700 gap-2">
+                    <Upload className="w-4 h-4" /> {loadingImport ? "Importando..." : "Importar"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Resultado */}
+              {resultadoImport && (
+                <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                  <p className="text-sm font-semibold text-slate-700">Resultado da importação</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { label: "Processados", valor: resultadoImport.processados, cor: "text-green-600" },
+                      { label: "Jogadores criados", valor: resultadoImport.jogadoresCriados, cor: "text-blue-600" },
+                      { label: "Usuários criados", valor: resultadoImport.usuariosCriados, cor: "text-purple-600" },
+                      { label: "Gols lançados", valor: resultadoImport.golsLancados, cor: "text-slate-700" },
+                      { label: "Destaques", valor: resultadoImport.destaquesLancados, cor: "text-amber-600" },
+                      { label: "Águas de salsicha", valor: resultadoImport.aguasLancadas, cor: "text-orange-600" },
+                    ].map(({ label, valor, cor }) => (
+                      <div key={label} className="bg-slate-50 rounded-lg p-3 text-center">
+                        <p className={`text-xl font-bold ${cor}`}>{valor}</p>
+                        <p className="text-xs text-slate-400">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {resultadoImport.erros.length > 0 && (
+                    <div className="bg-red-50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-red-600 mb-1.5">⚠️ Erros ({resultadoImport.erros.length}):</p>
+                      <ul className="text-xs text-red-500 space-y-0.5 max-h-32 overflow-y-auto">
+                        {resultadoImport.erros.map((erro, i) => <li key={i}>• {erro}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

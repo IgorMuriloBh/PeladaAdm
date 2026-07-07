@@ -60,6 +60,7 @@ export async function loginUsuario(req: Request, res: Response) {
   res.json({
     token,
     tipo: "usuario",
+    precisaTrocarSenha: usuario.precisaTrocarSenha,
     usuario: {
       id: usuario.id,
       nome: usuario.nome,
@@ -69,6 +70,31 @@ export async function loginUsuario(req: Request, res: Response) {
       jogadorPelada: usuario.jogadorPelada,
     },
   });
+}
+
+// Troca de senha pelo próprio usuário (primeiro login ou voluntária)
+export async function trocarSenha(req: Request & { userId?: string }, res: Response) {
+  const { senhaAtual, novaSenha } = req.body;
+  if (!novaSenha || novaSenha.length < 6) {
+    res.status(400).json({ error: "A nova senha deve ter pelo menos 6 caracteres" }); return;
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.userId } });
+  if (!usuario) { res.status(404).json({ error: "Usuário não encontrado" }); return; }
+
+  if (!senhaAtual || !(await bcrypt.compare(senhaAtual, usuario.senha))) {
+    res.status(401).json({ error: "Senha atual incorreta" }); return;
+  }
+  if (senhaAtual === novaSenha) {
+    res.status(400).json({ error: "A nova senha deve ser diferente da atual" }); return;
+  }
+
+  const hash = await bcrypt.hash(novaSenha, 10);
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { senha: hash, precisaTrocarSenha: false },
+  });
+  res.json({ ok: true });
 }
 
 export async function meUsuario(req: Request & { userId?: string }, res: Response) {
@@ -82,6 +108,7 @@ export async function meUsuario(req: Request & { userId?: string }, res: Respons
     nome: usuario.nome,
     email: usuario.email,
     role: usuario.role,
+    precisaTrocarSenha: usuario.precisaTrocarSenha,
     pelada: usuario.pelada,
     jogadorPelada: usuario.jogadorPelada,
   });

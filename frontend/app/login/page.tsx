@@ -22,6 +22,9 @@ export default function LoginPage() {
       const result = await login(email, senha);
       if (result.tipo === "admin") {
         router.push("/dashboard");
+      } else if (result.precisaTrocarSenha) {
+        // Primeiro login com senha padrão — obriga a troca
+        router.push("/trocar-senha");
       } else {
         const role = result.role;
         if (role === "ADMINISTRADOR") {

@@ -23,16 +23,27 @@ export async function criarUsuario(req: AuthRequest, res: Response) {
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const { nome, email, senha, role, jogadorPeladaId } = req.body;
-  if (!nome || !email || !senha || !role) {
-    res.status(400).json({ error: "nome, email, senha e role são obrigatórios" }); return;
+  if (!nome || !email || !role) {
+    res.status(400).json({ error: "nome, email e role são obrigatórios" }); return;
+  }
+  // Perfil JOGADOR exige vínculo com um jogador cadastrado
+  if (role === "JOGADOR" && !jogadorPeladaId) {
+    res.status(400).json({ error: "Para o perfil Jogador é obrigatório vincular a um jogador cadastrado" }); return;
   }
 
   const existe = await prisma.usuario.findUnique({ where: { email } });
   if (existe) { res.status(409).json({ error: "E-mail já cadastrado" }); return; }
 
-  const hash = await bcrypt.hash(senha, 10);
+  // Sem senha informada → usa a senha padrão da pelada e obriga troca no primeiro login
+  const usaSenhaPadrao = !senha;
+  const senhaFinal = senha || (pelada as any).senhaPadrao || "senha001";
+  const hash = await bcrypt.hash(senhaFinal, 10);
   const usuario = await prisma.usuario.create({
-    data: { nome, email, senha: hash, role, peladaId, jogadorPeladaId: jogadorPeladaId || null },
+    data: {
+      nome, email, senha: hash, role, peladaId,
+      jogadorPeladaId: jogadorPeladaId || null,
+      precisaTrocarSenha: usaSenhaPadrao,
+    },
     include: { jogadorPelada: { include: { jogador: true } } },
   });
 

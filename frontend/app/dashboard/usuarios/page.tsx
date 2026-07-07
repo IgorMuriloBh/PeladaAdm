@@ -68,8 +68,11 @@ export default function UsuariosPage() {
   }
 
   async function salvar() {
-    if (!form.nome || !form.email || (!editItem && !form.senha) || !form.role) {
+    if (!form.nome || !form.email || !form.role) {
       toast.error("Preencha todos os campos obrigatórios"); return;
+    }
+    if (form.role === "JOGADOR" && !form.jogadorPeladaId) {
+      toast.error("Para o perfil Jogador é obrigatório vincular a um jogador cadastrado"); return;
     }
     setLoading(true);
     try {
@@ -142,8 +145,9 @@ export default function UsuariosPage() {
                 <Input type="email" placeholder="email@exemplo.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="space-y-1">
-                <Label>Senha {editItem ? "(deixe em branco para não alterar)" : "*"}</Label>
-                <Input type="password" placeholder="••••••••" value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} />
+                <Label>Senha {editItem ? "(deixe em branco para não alterar)" : "(opcional)"}</Label>
+                <Input type="password" placeholder={editItem ? "••••••••" : "Em branco = senha padrão da pelada"} value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} />
+                {!editItem && <p className="text-xs text-slate-400">Sem senha, o usuário recebe a senha padrão e deve trocá-la no primeiro login.</p>}
               </div>
               <div className="space-y-1">
                 <Label>Perfil *</Label>
@@ -158,15 +162,14 @@ export default function UsuariosPage() {
               </div>
               {(form.role === "JOGADOR") && (
                 <div className="space-y-1">
-                  <Label>Vincular ao atleta (opcional)</Label>
+                  <Label>Vincular ao atleta *</Label>
                   <Select value={form.jogadorPeladaId} onValueChange={v => setForm(f => ({ ...f, jogadorPeladaId: v }))}>
                     <SelectTrigger className="bg-white"><SelectValue placeholder="Selecione o atleta" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">— Nenhum —</SelectItem>
                       {jogadores.map(j => <SelectItem key={j.id} value={j.id}>{j.jogador.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-slate-400">Vinculando ao atleta, o jogador verá seus dados individuais.</p>
+                  <p className="text-xs text-slate-400">Obrigatório: o usuário Jogador precisa estar vinculado a um jogador cadastrado.</p>
                 </div>
               )}
               <div className="flex gap-2 pt-2">

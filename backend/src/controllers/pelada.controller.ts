@@ -59,7 +59,7 @@ export async function atualizar(req: AuthRequest, res: Response) {
   if (!existe) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const logo = (req as any).file ? `/uploads/${(req as any).file.filename}` : undefined;
-  const { nome, corPrimaria, corSecundaria, corTexto, diaSemana, horario, maxJogadores, horaAbreLista, horaFechaLista, ativa } = req.body;
+  const { nome, corPrimaria, corSecundaria, corTexto, diaSemana, horario, maxJogadores, horaAbreLista, horaFechaLista, ativa, senhaPadrao } = req.body;
 
   const pelada = await prisma.pelada.update({
     where: { id },
@@ -74,6 +74,7 @@ export async function atualizar(req: AuthRequest, res: Response) {
       ...(maxJogadores && { maxJogadores: Number(maxJogadores) }),
       ...(horaAbreLista && { horaAbreLista: horaAbreLista as string }),
       ...(horaFechaLista && { horaFechaLista: horaFechaLista as string }),
+      ...(senhaPadrao && { senhaPadrao: (senhaPadrao as string).trim() }),
       ...(ativa !== undefined && { ativa: ativa === "true" || ativa === true }),
     },
     include: { configuracaoFinanceira: true },

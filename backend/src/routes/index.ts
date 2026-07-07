@@ -12,6 +12,10 @@ import * as votacao from "../controllers/votacao.controller";
 import * as sorteio from "../controllers/sorteio.controller";
 import * as usuario from "../controllers/usuario.controller";
 import * as alerta from "../controllers/alerta.controller";
+import * as importacao from "../controllers/importacao.controller";
+import multer from "multer";
+
+const uploadPlanilha = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -21,6 +25,7 @@ router.post("/auth/login", auth.login);
 router.get("/auth/me", authMiddleware, auth.me);
 router.post("/auth/usuario/login", auth.loginUsuario);
 router.get("/auth/usuario/me", usuarioMiddleware, auth.meUsuario);
+router.post("/auth/usuario/trocar-senha", usuarioMiddleware, auth.trocarSenha);
 
 // ── Peladas (Admin) ────────────────────────────────────────────────────────
 router.get("/peladas", authMiddleware, pelada.listar);
@@ -92,6 +97,10 @@ router.get("/peladas/:peladaId/financeiro/resumo", authMiddleware, fin.resumo);
 router.get("/peladas/:peladaId/alertas", authMiddleware, alerta.buscarConfigAlerta);
 router.put("/peladas/:peladaId/alertas", authMiddleware, alerta.salvarConfigAlerta);
 router.post("/peladas/:peladaId/alertas/testar", authMiddleware, alerta.testarEmail);
+
+// ── Importação de planilha (Admin) ────────────────────────────────────────
+router.get("/peladas/:peladaId/importacao/modelo", authMiddleware, importacao.baixarModelo);
+router.post("/peladas/:peladaId/importacao", authMiddleware, uploadPlanilha.single("planilha"), importacao.importarPlanilha);
 
 // ── Confirmação de presença via token (pública) ───────────────────────────
 router.get("/confirmar/:token", alerta.buscarToken);

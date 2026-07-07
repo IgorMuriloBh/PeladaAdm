@@ -30,6 +30,7 @@ model Pelada {
   maxJogadores Int     @default(20)
   horaAbreLista String  @default("08:00")
   horaFechaLista String @default("18:00")
+  senhaPadrao String   @default("senha001")
   ativa       Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -268,6 +269,7 @@ model Usuario {
   senha     String
   role      RoleUsuario @default(JOGADOR)
   ativo     Boolean     @default(true)
+  precisaTrocarSenha Boolean @default(false)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
