@@ -5,19 +5,19 @@ import { AuthRequest } from "../middlewares/auth";
 import { prisma } from "../lib/prisma";
 
 // Colunas do modelo padrão
-const COLUNAS = ["Nome", "Email", "Celular", "Tipo", "Posicao", "Gols", "Destaques", "AguaSalsicha"] as const;
+const COLUNAS = ["Nome", "Email", "Celular", "Tipo", "Posicao", "Presenca", "Gols", "Destaques", "AguaSalsicha"] as const;
 
 // ── Download do modelo ──────────────────────────────────────────────────────
 export async function baixarModelo(req: AuthRequest, res: Response) {
   const exemplo = [
-    { Nome: "João da Silva", Email: "joao@email.com", Celular: "31999998888", Tipo: "MENSALISTA", Posicao: "LINHA", Gols: 15, Destaques: 3, AguaSalsicha: 1 },
-    { Nome: "Pedro Goleiro", Email: "pedro@email.com", Celular: "31988887777", Tipo: "MENSALISTA", Posicao: "GOLEIRO", Gols: 0, Destaques: 5, AguaSalsicha: 0 },
-    { Nome: "Carlos Diarista", Email: "carlos@email.com", Celular: "", Tipo: "DIARISTA", Posicao: "LINHA", Gols: 7, Destaques: 1, AguaSalsicha: 2 },
+    { Nome: "João da Silva", Email: "joao@email.com", Celular: "31999998888", Tipo: "MENSALISTA", Posicao: "LINHA", Presenca: 20, Gols: 15, Destaques: 3, AguaSalsicha: 1 },
+    { Nome: "Pedro Goleiro", Email: "pedro@email.com", Celular: "31988887777", Tipo: "MENSALISTA", Posicao: "GOLEIRO", Presenca: 18, Gols: 0, Destaques: 5, AguaSalsicha: 0 },
+    { Nome: "Carlos Diarista", Email: "carlos@email.com", Celular: "", Tipo: "DIARISTA", Posicao: "LINHA", Presenca: 9, Gols: 7, Destaques: 1, AguaSalsicha: 2 },
   ];
 
   const ws = XLSX.utils.json_to_sheet(exemplo, { header: [...COLUNAS] });
   // Larguras de coluna
-  ws["!cols"] = [{ wch: 25 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 6 }, { wch: 10 }, { wch: 13 }];
+  ws["!cols"] = [{ wch: 25 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 6 }, { wch: 10 }, { wch: 13 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Jogadores");
@@ -58,15 +58,24 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
 
   // Partida histórica: 01/01 do ano corrente (reutiliza se já existir)
   const anoCorrente = new Date().getFullYear();
-  const dataHistorica = new Date(anoCorrente, 0, 1, 12, 0, 0);
-  let partidaHistorica = await prisma.partida.findFirst({
-    where: { peladaId, data: dataHistorica, observacoes: "Histórico importado" },
+
+  // Pool de partidas históricas (REALIZADAS) usado para computar as presenças.
+  // Cada presença retroativa exige uma partida distinta (restrição única presença/partida).
+  // A primeira do pool serve de referência para gols e votações.
+  const poolHistorico = await prisma.partida.findMany({
+    where: { peladaId, observacoes: { startsWith: "Histórico importado" } },
+    orderBy: { data: "asc" },
   });
-  if (!partidaHistorica) {
-    partidaHistorica = await prisma.partida.create({
-      data: { peladaId, data: dataHistorica, status: "REALIZADA", observacoes: "Histórico importado" },
-    });
+  async function garantirPartidasHistoricas(qtd: number) {
+    for (let i = poolHistorico.length; i < qtd; i++) {
+      const data = new Date(anoCorrente, 0, 1, 12, i, 0); // datas distintas e estáveis
+      const p = await prisma.partida.create({
+        data: { peladaId, data, status: "REALIZADA", observacoes: i === 0 ? "Histórico importado" : `Histórico importado ${i + 1}` },
+      });
+      poolHistorico.push(p);
+    }
   }
+  await garantirPartidasHistoricas(1); // garante a partida de referência
 
   const senhaPadrao = (pelada as any).senhaPadrao || "senha001";
   const hashPadrao = await bcrypt.hash(senhaPadrao, 10);
@@ -75,6 +84,7 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
     processados: 0,
     jogadoresCriados: 0,
     usuariosCriados: 0,
+    presencasLancadas: 0,
     golsLancados: 0,
     destaquesLancados: 0,
     aguasLancadas: 0,
@@ -90,6 +100,7 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
       const celular = String(linha.Celular || "").trim() || null;
       const tipo = String(linha.Tipo || "MENSALISTA").trim().toUpperCase() === "DIARISTA" ? "DIARISTA" : "MENSALISTA";
       const posicao = String(linha.Posicao || "LINHA").trim().toUpperCase() === "GOLEIRO" ? "GOLEIRO" : "LINHA";
+      const presenca = Math.max(0, Number(linha.Presenca) || 0);
       const gols = Math.max(0, Number(linha.Gols) || 0);
       const destaques = Math.max(0, Number(linha.Destaques) || 0);
       const aguas = Math.max(0, Number(linha.AguaSalsicha) || 0);
@@ -128,23 +139,32 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
         resultado.usuariosCriados++;
       }
 
-      // 4. Presença na partida histórica
-      await prisma.presenca.upsert({
-        where: { partidaId_jogadorPeladaId: { partidaId: partidaHistorica.id, jogadorPeladaId: jp.id } },
-        create: { partidaId: partidaHistorica.id, jogadorPeladaId: jp.id, status: "CONFIRMADO" },
-        update: {},
+      // 4. Presenças retroativas — uma por partida histórica distinta
+      await garantirPartidasHistoricas(presenca);
+      // Idempotência: remove presenças históricas anteriores do jogador
+      await prisma.presenca.deleteMany({
+        where: { jogadorPeladaId: jp.id, partidaId: { in: poolHistorico.map(p => p.id) } },
       });
+      if (presenca > 0) {
+        await prisma.presenca.createMany({
+          data: poolHistorico.slice(0, presenca).map(p => ({
+            partidaId: p.id, jogadorPeladaId: jp!.id, status: "CONFIRMADO" as const,
+          })),
+        });
+        resultado.presencasLancadas += presenca;
+      }
 
-      // 5. Limpa lançamentos anteriores deste jogador na partida histórica
-      // (permite re-importar a planilha corrigida sem duplicar)
-      await prisma.gol.deleteMany({ where: { partidaId: partidaHistorica.id, jogadorPeladaId: jp.id } });
-      await prisma.votacao.deleteMany({ where: { partidaId: partidaHistorica.id, jogadorPeladaId: jp.id } });
+      // 5. Partida de referência p/ gols e votações (primeira do pool)
+      const refPartidaId = poolHistorico[0].id;
+      // Limpa lançamentos anteriores deste jogador (permite re-importar sem duplicar)
+      await prisma.gol.deleteMany({ where: { partidaId: refPartidaId, jogadorPeladaId: jp.id } });
+      await prisma.votacao.deleteMany({ where: { partidaId: refPartidaId, jogadorPeladaId: jp.id } });
 
-      // Gols (N registros na partida histórica)
+      // Gols (N registros na partida de referência)
       if (gols > 0) {
         await prisma.gol.createMany({
           data: Array.from({ length: gols }, () => ({
-            partidaId: partidaHistorica!.id, jogadorPeladaId: jp!.id,
+            partidaId: refPartidaId, jogadorPeladaId: jp!.id,
           })),
         });
         resultado.golsLancados += gols;
@@ -154,7 +174,7 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
       if (destaques > 0) {
         await prisma.votacao.createMany({
           data: Array.from({ length: destaques }, () => ({
-            partidaId: partidaHistorica!.id, jogadorPeladaId: jp!.id, tipo: "DESTAQUE" as const,
+            partidaId: refPartidaId, jogadorPeladaId: jp!.id, tipo: "DESTAQUE" as const,
           })),
         });
         resultado.destaquesLancados += destaques;
@@ -162,7 +182,7 @@ export async function importarPlanilha(req: AuthRequest, res: Response) {
       if (aguas > 0) {
         await prisma.votacao.createMany({
           data: Array.from({ length: aguas }, () => ({
-            partidaId: partidaHistorica!.id, jogadorPeladaId: jp!.id, tipo: "AGUA_SALSICHA" as const,
+            partidaId: refPartidaId, jogadorPeladaId: jp!.id, tipo: "AGUA_SALSICHA" as const,
           })),
         });
         resultado.aguasLancadas += aguas;

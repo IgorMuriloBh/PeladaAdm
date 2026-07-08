@@ -32,7 +32,7 @@ type Tab = "geral" | "financeiro" | "alertas" | "importar";
 
 interface ResultadoImportacao {
   processados: number; jogadoresCriados: number; usuariosCriados: number;
-  golsLancados: number; destaquesLancados: number; aguasLancadas: number;
+  presencasLancadas: number; golsLancados: number; destaquesLancados: number; aguasLancadas: number;
   erros: string[];
 }
 
@@ -371,7 +371,7 @@ export default function ConfiguracoesPage() {
               {/* Passo 1: baixar modelo */}
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="text-sm font-semibold text-slate-700 mb-1">1. Baixe o modelo padrão</p>
-                <p className="text-xs text-slate-400 mb-3">Use este modelo como base. Colunas: Nome, Email, Celular, Tipo (MENSALISTA/DIARISTA), Posicao (LINHA/GOLEIRO), Gols, Destaques, AguaSalsicha.</p>
+                <p className="text-xs text-slate-400 mb-3">Use este modelo como base. Colunas: Nome, Email, Celular, Tipo (MENSALISTA/DIARISTA), Posicao (LINHA/GOLEIRO), Presenca, Gols, Destaques, AguaSalsicha.</p>
                 <Button type="button" variant="outline" onClick={baixarModelo} className="gap-2">
                   <Download className="w-4 h-4" /> Baixar modelo (.xlsx)
                 </Button>
@@ -405,6 +405,7 @@ export default function ConfiguracoesPage() {
                       { label: "Processados", valor: resultadoImport.processados, cor: "text-green-600" },
                       { label: "Jogadores criados", valor: resultadoImport.jogadoresCriados, cor: "text-blue-600" },
                       { label: "Usuários criados", valor: resultadoImport.usuariosCriados, cor: "text-purple-600" },
+                      { label: "Presenças lançadas", valor: resultadoImport.presencasLancadas, cor: "text-blue-600" },
                       { label: "Gols lançados", valor: resultadoImport.golsLancados, cor: "text-slate-700" },
                       { label: "Destaques", valor: resultadoImport.destaquesLancados, cor: "text-amber-600" },
                       { label: "Águas de salsicha", valor: resultadoImport.aguasLancadas, cor: "text-orange-600" },
