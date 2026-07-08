@@ -17,6 +17,7 @@ const NAV_JOGADOR = [
 const NAV_OPERADOR = [
   { href: "/portal/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/portal/gols", label: "Lançar Gols", icon: Target },
+  { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
 ];

@@ -97,6 +97,7 @@ model JogadorPelada {
   resenhaPresencas ResenhaPresenca[]
   gols             Gol[]
   votacoes         Votacao[]
+  votosJogador     VotoJogador[]
   usuario          Usuario?
   presencaTokens   PresencaToken[]
 
@@ -119,6 +120,7 @@ model Partida {
   presencas      Presenca[]
   gols           Gol[]
   votacoes       Votacao[]
+  votosJogador   VotoJogador[]
   resenha        Resenha?
   presencaTokens PresencaToken[]
 }
@@ -178,6 +180,23 @@ model VotoDestaque {
   votacao   Votacao @relation(fields: [votacaoId], references: [id])
 
   votanteId String
+}
+
+// Enquete dos jogadores no portal (separada do destaque oficial da pelada).
+// Cada usuário vota uma única vez por tema em cada partida.
+model VotoJogador {
+  id        String      @id @default(cuid())
+  tipo      TipoVotacao
+  votanteId String      // Usuario que registrou o voto
+  createdAt DateTime    @default(now())
+
+  partidaId String
+  partida   Partida @relation(fields: [partidaId], references: [id])
+
+  jogadorPeladaId String        // quem recebeu o voto
+  jogadorPelada   JogadorPelada @relation(fields: [jogadorPeladaId], references: [id])
+
+  @@unique([partidaId, tipo, votanteId])
 }
 
 model Resenha {

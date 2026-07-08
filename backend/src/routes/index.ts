@@ -121,9 +121,11 @@ router.get("/portal/partidas", usuarioMiddleware, partida.listar);
 // Jogador confirma/cancela a própria presença
 router.post("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.confirmarMinhaPresenca);
 router.delete("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.removerMinhaPresenca);
-router.get("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.votacoesPorPartida);
-router.post("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.registrarVotacao);
-router.delete("/portal/votacoes/:votacaoId", usuarioMiddleware, votacao.removerVotacao);
+// Enquete dos jogadores (VotoJogador)
+router.get("/portal/partidas/:partidaId/votos", usuarioMiddleware, votacao.resultadoVotoJogador);
+router.post("/portal/partidas/:partidaId/votos", usuarioMiddleware, votacao.registrarVotoJogador);
+// Adm/Operador zera o voto de um votante (só com pelada em andamento)
+router.delete("/portal/partidas/:partidaId/votos/:votanteId", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), votacao.zerarVotoJogador);
 
 // Gols (Operador, Administrador)
 router.get("/portal/partidas/:partidaId/gols", usuarioMiddleware, gols.listarGols);

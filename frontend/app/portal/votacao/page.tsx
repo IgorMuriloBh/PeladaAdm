@@ -1,67 +1,87 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Star, Droplets, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Star, Droplets, ChevronDown, ChevronUp, Check, RotateCcw, Lock } from "lucide-react";
 
-interface Partida { id: string; data: string; status: string }
+interface Partida { id: string; data: string; status: string; presencas?: Presenca[] }
 interface Presenca { id: string; status: string; jogadorPelada: { id: string; jogador: { nome: string; fotoNormal: string | null } } }
-interface Votacao { id: string; tipo: string; jogadorPeladaId: string; jogadorPelada: { jogador: { nome: string } } }
+interface Apurado { jogadorPeladaId: string; nome: string; votos: number }
+interface VotoGestao { id: string; tipo: string; votanteId: string; votanteNome: string; jogadorPeladaId: string; jogadorNome: string }
+interface Resultado {
+  status: string;
+  emAndamento: boolean;
+  apuracao: { DESTAQUE: Apurado[]; AGUA_SALSICHA: Apurado[] };
+  meusVotos: { DESTAQUE: string | null; AGUA_SALSICHA: string | null };
+  votos: VotoGestao[];
+}
 
-const STATUS_OK = ["EM_ANDAMENTO", "REALIZADA"];
+const BASE = "http://localhost:3001";
 
 export default function PortalVotacaoPage() {
   const { usuario } = useAuth();
+  const isGestor = usuario?.role === "ADMINISTRADOR" || usuario?.role === "OPERADOR";
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [selectedPartida, setSelectedPartida] = useState<Partida | null>(null);
   const [presencas, setPresencas] = useState<Presenca[]>([]);
-  const [votacoes, setVotacoes] = useState<Votacao[]>([]);
+  const [resultado, setResultado] = useState<Resultado | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPartidas, setShowPartidas] = useState(false);
 
   useEffect(() => {
     if (!usuario) return;
     api.get("/portal/partidas").then(r => {
-      const ok = r.data.filter((p: Partida) => STATUS_OK.includes(p.status));
-      setPartidas(ok);
-      if (ok.length > 0) selectPartida(ok[ok.length - 1]);
+      // Só peladas EM ANDAMENTO recebem votação
+      const emAndamento = (r.data as Partida[]).filter(p => p.status === "EM_ANDAMENTO");
+      setPartidas(emAndamento);
+      if (emAndamento.length > 0) selectPartida(emAndamento[emAndamento.length - 1]);
     }).finally(() => setLoading(false));
   }, [usuario]);
+
+  const carregarResultado = useCallback(async (partidaId: string) => {
+    const r = await api.get(`/portal/partidas/${partidaId}/votos`);
+    setResultado(r.data);
+  }, []);
 
   async function selectPartida(p: Partida) {
     setSelectedPartida(p);
     setShowPartidas(false);
-    const [pres, vot] = await Promise.all([
-      api.get(`/portal/partidas/${p.id}/gols`).catch(() => ({ data: [] })),
-      api.get(`/portal/partidas/${p.id}/votacoes`),
-    ]);
-    // Get presencas from partidas list
-    const partidaFull = await api.get("/portal/partidas").catch(() => ({ data: [] }));
-    const found = partidaFull.data.find((x: any) => x.id === p.id);
-    setPresencas(found?.presencas?.filter((pr: any) => pr.status === "CONFIRMADO") || []);
-    setVotacoes(vot.data);
+    setPresencas(p.presencas?.filter(pr => pr.status === "CONFIRMADO") || []);
+    await carregarResultado(p.id).catch(() => setResultado(null));
   }
 
   async function votar(jogadorPeladaId: string, tipo: "DESTAQUE" | "AGUA_SALSICHA") {
     if (!selectedPartida) return;
     try {
-      await api.post(`/portal/partidas/${selectedPartida.id}/votacoes`, { jogadorPeladaId, tipo });
-      const r = await api.get(`/portal/partidas/${selectedPartida.id}/votacoes`);
-      setVotacoes(r.data);
-      toast.success(tipo === "DESTAQUE" ? "⭐ Destaque votado!" : "💧 Água de salsicha votado!");
-    } catch {
-      toast.error("Erro ao votar");
+      await api.post(`/portal/partidas/${selectedPartida.id}/votos`, { jogadorPeladaId, tipo });
+      await carregarResultado(selectedPartida.id);
+      toast.success(tipo === "DESTAQUE" ? "⭐ Voto de destaque registrado!" : "💧 Voto de água registrado!");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || "Erro ao votar");
     }
   }
 
-  const destaque = votacoes.find(v => v.tipo === "DESTAQUE");
-  const agua = votacoes.find(v => v.tipo === "AGUA_SALSICHA");
-  const BASE = "http://localhost:3001";
+  async function zerar(votanteId: string, tipo: string, votanteNome: string) {
+    if (!selectedPartida) return;
+    try {
+      await api.delete(`/portal/partidas/${selectedPartida.id}/votos/${votanteId}?tipo=${tipo}`);
+      await carregarResultado(selectedPartida.id);
+      toast.success(`Voto de ${votanteNome} zerado`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || "Erro ao zerar voto");
+    }
+  }
 
   function formatData(d: string) {
     return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
   }
+  function votosDe(jpId: string, tipo: "DESTAQUE" | "AGUA_SALSICHA") {
+    return resultado?.apuracao[tipo].find(a => a.jogadorPeladaId === jpId)?.votos || 0;
+  }
+
+  const meuDestaque = resultado?.meusVotos.DESTAQUE || null;
+  const minhaAgua = resultado?.meusVotos.AGUA_SALSICHA || null;
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
@@ -73,45 +93,33 @@ export default function PortalVotacaoPage() {
       ) : partidas.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <Star className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          <p>Nenhuma partida em andamento ou realizada.</p>
+          <p>Nenhuma pelada em andamento para votação.</p>
         </div>
       ) : (
         <>
           {/* Seletor de partida */}
           <div className="mb-4 relative">
-            <button
-              onClick={() => setShowPartidas(v => !v)}
-              className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700"
-            >
-              <span>{selectedPartida ? formatData(selectedPartida.data) : "Selecione a partida"}</span>
+            <button onClick={() => setShowPartidas(v => !v)}
+              className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700">
+              <span>{selectedPartida ? `${formatData(selectedPartida.data)} · Em andamento` : "Selecione a partida"}</span>
               {showPartidas ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
             </button>
             {showPartidas && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-10 overflow-hidden">
                 {partidas.map(p => (
                   <button key={p.id} onClick={() => selectPartida(p)} className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 border-b border-slate-50 last:border-0">
-                    {formatData(p.data)} · {p.status === "EM_ANDAMENTO" ? "Em andamento" : "Realizada"}
+                    {formatData(p.data)} · Em andamento
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Votações atuais */}
-          {(destaque || agua) && (
-            <div className="bg-slate-50 rounded-xl p-3 mb-4 flex gap-3">
-              {destaque && (
-                <div className="flex-1 bg-yellow-50 border border-yellow-100 rounded-lg p-2 text-center">
-                  <p className="text-xs text-yellow-600 font-medium">⭐ Destaque</p>
-                  <p className="text-sm font-bold text-slate-800 mt-0.5 truncate">{destaque.jogadorPelada.jogador.nome}</p>
-                </div>
-              )}
-              {agua && (
-                <div className="flex-1 bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
-                  <p className="text-xs text-blue-600 font-medium">💧 Água</p>
-                  <p className="text-sm font-bold text-slate-800 mt-0.5 truncate">{agua.jogadorPelada.jogador.nome}</p>
-                </div>
-              )}
+          {/* Aviso de voto já registrado */}
+          {(meuDestaque || minhaAgua) && (
+            <div className="bg-green-50 border border-green-100 rounded-xl p-3 mb-4 text-xs text-green-700">
+              Você já votou{meuDestaque && minhaAgua ? " nos dois temas" : meuDestaque ? " no destaque" : " na água de salsicha"}.
+              Para trocar, peça a um administrador ou operador para zerar seu voto.
             </div>
           )}
 
@@ -119,8 +127,10 @@ export default function PortalVotacaoPage() {
           <div className="space-y-2">
             {presencas.sort((a, b) => a.jogadorPelada.jogador.nome.localeCompare(b.jogadorPelada.jogador.nome, "pt-BR")).map(pr => {
               const jp = pr.jogadorPelada;
-              const isDestaque = destaque?.jogadorPeladaId === jp.id;
-              const isAgua = agua?.jogadorPeladaId === jp.id;
+              const votouDestaque = meuDestaque === jp.id;
+              const votouAgua = minhaAgua === jp.id;
+              const nDestaque = votosDe(jp.id, "DESTAQUE");
+              const nAgua = votosDe(jp.id, "AGUA_SALSICHA");
               return (
                 <div key={pr.id} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3">
                   {jp.jogador.fotoNormal ? (
@@ -134,19 +144,19 @@ export default function PortalVotacaoPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => votar(jp.id, "DESTAQUE")}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDestaque ? "bg-yellow-400 text-white" : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"}`}
+                      disabled={!!meuDestaque}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:cursor-not-allowed ${votouDestaque ? "bg-yellow-400 text-white" : meuDestaque ? "bg-slate-50 text-slate-300" : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"}`}
                     >
-                      {isDestaque && <Check className="w-3 h-3" />}
-                      <Star className="w-3 h-3" />
-                      Destaque
+                      {votouDestaque ? <Check className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+                      Destaque{nDestaque > 0 && <span className="ml-0.5 opacity-80">({nDestaque})</span>}
                     </button>
                     <button
                       onClick={() => votar(jp.id, "AGUA_SALSICHA")}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isAgua ? "bg-blue-400 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}
+                      disabled={!!minhaAgua}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:cursor-not-allowed ${votouAgua ? "bg-blue-400 text-white" : minhaAgua ? "bg-slate-50 text-slate-300" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}
                     >
-                      {isAgua && <Check className="w-3 h-3" />}
-                      <Droplets className="w-3 h-3" />
-                      Água
+                      {votouAgua ? <Check className="w-3 h-3" /> : <Droplets className="w-3 h-3" />}
+                      Água{nAgua > 0 && <span className="ml-0.5 opacity-80">({nAgua})</span>}
                     </button>
                   </div>
                 </div>
@@ -154,6 +164,34 @@ export default function PortalVotacaoPage() {
             })}
             {presencas.length === 0 && <p className="text-center text-slate-400 py-8 text-sm">Nenhum jogador confirmado nesta partida.</p>}
           </div>
+
+          {/* Painel de gestão (Adm/Operador): zerar votos */}
+          {isGestor && resultado && resultado.votos.length > 0 && (
+            <div className="mt-6 bg-white border border-slate-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <RotateCcw className="w-4 h-4 text-slate-500" />
+                <p className="text-sm font-semibold text-slate-700">Gestão de votos</p>
+                {!resultado.emAndamento && <span className="ml-auto flex items-center gap-1 text-xs text-slate-400"><Lock className="w-3 h-3" /> Pelada finalizada</span>}
+              </div>
+              <div className="space-y-1.5">
+                {resultado.votos.map(v => (
+                  <div key={v.id} className="flex items-center gap-2 text-xs py-1.5 border-b border-slate-50 last:border-0">
+                    <span className="text-sm">{v.tipo === "DESTAQUE" ? "⭐" : "💧"}</span>
+                    <span className="font-medium text-slate-700">{v.votanteNome}</span>
+                    <span className="text-slate-400">votou em</span>
+                    <span className="font-medium text-slate-700 flex-1 truncate">{v.jogadorNome}</span>
+                    <button
+                      onClick={() => zerar(v.votanteId, v.tipo, v.votanteNome)}
+                      disabled={!resultado.emAndamento}
+                      className="px-2 py-1 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium"
+                    >
+                      Zerar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
