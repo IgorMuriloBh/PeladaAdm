@@ -222,7 +222,7 @@ export async function dispararAlertaEncerramentoPelada(peladaId: string, partida
 // ── Rota pública: confirmar presença via token ─────────────────────────────
 
 export async function buscarToken(req: Request, res: Response) {
-  const { token } = req.params;
+  const token = req.params.token as string;
   const pt = await prisma.presencaToken.findUnique({
     where: { token },
     include: {
@@ -255,7 +255,7 @@ export async function buscarToken(req: Request, res: Response) {
 }
 
 export async function confirmarViaToken(req: Request, res: Response) {
-  const { token } = req.params;
+  const token = req.params.token as string;
   const { presenca: statusPresenca, interesseResenha, categoriaResenha } = req.body;
 
   const pt = await prisma.presencaToken.findUnique({ where: { token } });
