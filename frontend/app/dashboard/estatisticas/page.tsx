@@ -19,7 +19,7 @@ const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov"
 type OrdenarPor = "pontos" | "presencas" | "gols" | "destaques" | "aguas";
 const ORDENAR_OPCOES: { valor: OrdenarPor; label: string }[] = [
   { valor: "pontos", label: "Pontos" },
-  { valor: "presencas", label: "Jogos" },
+  { valor: "presencas", label: "Presença" },
   { valor: "gols", label: "Gols" },
   { valor: "destaques", label: "Destaque" },
   { valor: "aguas", label: "Água de salsicha" },
@@ -124,7 +124,7 @@ export default function EstatisticasPage() {
                       <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${(s[ordenarPor] / maxPontos) * 100}%` }} />
                     </div>
                     <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
-                      <span>{s.presencas} jogos</span>
+                      <span>{s.presencas} presenças</span>
                       <span>{s.gols} gols</span>
                       <span>{s.destaques} 🏆</span>
                       <span>{s.aguas} 🧅</span>
@@ -132,7 +132,7 @@ export default function EstatisticasPage() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-2xl font-bold text-green-600">{s[ordenarPor]}</p>
-                    <p className="text-xs text-slate-400">{ordenarPor === "pontos" ? "pontos" : ordenarPor === "presencas" ? "jogos" : ordenarPor === "gols" ? "gols" : ordenarPor === "destaques" ? "destaques" : "água salsicha"}</p>
+                    <p className="text-xs text-slate-400">{ordenarPor === "pontos" ? "pontos" : ordenarPor === "presencas" ? "presenças" : ordenarPor === "gols" ? "gols" : ordenarPor === "destaques" ? "destaques" : "água salsicha"}</p>
                   </div>
                 </div>
               </CardContent>

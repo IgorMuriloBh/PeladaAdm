@@ -22,7 +22,7 @@ type OrdenarPor = "pontos" | "presencas" | "gols" | "destaques" | "aguas";
 
 const ORDENAR_OPCOES: { valor: OrdenarPor; label: string }[] = [
   { valor: "pontos", label: "Pontos" },
-  { valor: "presencas", label: "Jogos" },
+  { valor: "presencas", label: "Presença" },
   { valor: "gols", label: "Gols" },
   { valor: "destaques", label: "Destaque" },
   { valor: "aguas", label: "Água de salsicha" },
@@ -30,7 +30,7 @@ const ORDENAR_OPCOES: { valor: OrdenarPor; label: string }[] = [
 
 const ORDENAR_META: Record<OrdenarPor, { sufixo: string; cor: string }> = {
   pontos: { sufixo: "pts", cor: "text-green-700" },
-  presencas: { sufixo: "jogos", cor: "text-blue-600" },
+  presencas: { sufixo: "presenças", cor: "text-blue-600" },
   gols: { sufixo: "gols", cor: "text-green-700" },
   destaques: { sufixo: "🏆", cor: "text-amber-500" },
   aguas: { sufixo: "🧅", cor: "text-orange-500" },
@@ -103,7 +103,7 @@ export default function PortalEstatisticasPage() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 text-sm truncate">{s.nome}</p>
-                <p className="text-xs text-slate-400">{s.presencas} jogos · {s.gols} gols · {s.destaques} 🏆 · {s.aguas} 🧅</p>
+                <p className="text-xs text-slate-400">{s.presencas} presenças · {s.gols} gols · {s.destaques} 🏆 · {s.aguas} 🧅</p>
               </div>
               <div className="text-right">
                 <p className={`font-bold text-lg ${ORDENAR_META[ordenarPor].cor}`}>{s[ordenarPor]}</p>
