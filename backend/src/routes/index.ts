@@ -118,6 +118,9 @@ router.get("/portal/destaques", usuarioMiddleware, votacao.listarVotacoes);
 
 // Partidas + Votação (todos os perfis)
 router.get("/portal/partidas", usuarioMiddleware, partida.listar);
+// Jogador confirma/cancela a própria presença
+router.post("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.confirmarMinhaPresenca);
+router.delete("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.removerMinhaPresenca);
 router.get("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.votacoesPorPartida);
 router.post("/portal/partidas/:partidaId/votacoes", usuarioMiddleware, votacao.registrarVotacao);
 router.delete("/portal/votacoes/:votacaoId", usuarioMiddleware, votacao.removerVotacao);

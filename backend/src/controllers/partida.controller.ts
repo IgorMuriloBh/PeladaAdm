@@ -200,3 +200,83 @@ export async function enviarLembretes(req: AuthRequest, res: Response) {
   }
   res.json({ enviados });
 }
+
+// ── Portal do jogador: confirma/cancela a própria presença ──────────────────
+const CANCELAMENTO_LIMITE_MS = 2 * 60 * 60 * 1000; // 2 horas antes do início
+
+export async function confirmarMinhaPresenca(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const jogadorPeladaId = req.jogadorPeladaId;
+  if (!jogadorPeladaId) { res.status(400).json({ error: "Seu usuário não está vinculado a um jogador" }); return; }
+
+  const partidaId = req.params.partidaId as string;
+  const partida = await prisma.partida.findFirst({ where: { id: partidaId, peladaId } });
+  if (!partida) { res.status(404).json({ error: "Partida não encontrada" }); return; }
+  if (["REALIZADA", "CANCELADA"].includes(partida.status)) {
+    res.status(400).json({ error: "Esta pelada não está mais aberta para confirmação" }); return;
+  }
+
+  const ja = await prisma.presenca.findUnique({ where: { partidaId_jogadorPeladaId: { partidaId, jogadorPeladaId } } });
+  if (ja) { res.status(200).json(ja); return; }
+
+  const confirmados = await prisma.presenca.count({ where: { partidaId, status: "CONFIRMADO" } });
+  const status = confirmados < pelada.maxJogadores ? "CONFIRMADO" : "LISTA_ESPERA";
+
+  let posicaoFila: number | undefined;
+  if (status === "LISTA_ESPERA") {
+    const maxFila = await prisma.presenca.aggregate({ where: { partidaId, status: "LISTA_ESPERA" }, _max: { posicaoFila: true } });
+    posicaoFila = (maxFila._max.posicaoFila || 0) + 1;
+  }
+
+  const presenca = await prisma.presenca.create({
+    data: { partidaId, jogadorPeladaId, status, posicaoFila },
+    include: { jogadorPelada: { include: { jogador: true } } },
+  });
+  res.status(201).json(presenca);
+}
+
+export async function removerMinhaPresenca(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const jogadorPeladaId = req.jogadorPeladaId;
+  if (!jogadorPeladaId) { res.status(400).json({ error: "Seu usuário não está vinculado a um jogador" }); return; }
+
+  const partidaId = req.params.partidaId as string;
+  const partida = await prisma.partida.findFirst({ where: { id: partidaId, peladaId } });
+  if (!partida) { res.status(404).json({ error: "Partida não encontrada" }); return; }
+
+  // Regra: só pode cancelar até 2 horas antes do início da pelada
+  const limite = new Date(partida.data).getTime() - CANCELAMENTO_LIMITE_MS;
+  if (Date.now() > limite) {
+    res.status(400).json({ error: "O cancelamento só é permitido até 2 horas antes do início da pelada" }); return;
+  }
+
+  const presenca = await prisma.presenca.findUnique({ where: { partidaId_jogadorPeladaId: { partidaId, jogadorPeladaId } } });
+  if (!presenca) { res.status(404).json({ error: "Você não está confirmado nesta pelada" }); return; }
+
+  await prisma.presenca.delete({ where: { id: presenca.id } });
+
+  // Promover o primeiro da fila de espera se o cancelado era CONFIRMADO
+  if (presenca.status === "CONFIRMADO") {
+    const proxDaFila = await prisma.presenca.findFirst({
+      where: { partidaId, status: "LISTA_ESPERA" },
+      orderBy: { posicaoFila: "asc" },
+      include: { jogadorPelada: { include: { jogador: true } } },
+    });
+    if (proxDaFila) {
+      await prisma.presenca.update({ where: { id: proxDaFila.id }, data: { status: "CONFIRMADO", posicaoFila: null } });
+      const restanteFila = await prisma.presenca.findMany({ where: { partidaId, status: "LISTA_ESPERA" }, orderBy: { posicaoFila: "asc" } });
+      for (let i = 0; i < restanteFila.length; i++) {
+        await prisma.presenca.update({ where: { id: restanteFila[i].id }, data: { posicaoFila: i + 1 } });
+      }
+      sendEmail({ to: proxDaFila.jogadorPelada.jogador.email, subject: `Vaga disponível — ${pelada.nome}`, html: templateVagaDisponivel(pelada.nome, new Date(partida.data).toLocaleDateString("pt-BR")) }).catch(() => {});
+    }
+  }
+
+  res.json({ ok: true });
+}
