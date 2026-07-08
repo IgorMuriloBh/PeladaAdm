@@ -9,11 +9,21 @@ import { BarChart3 } from "lucide-react";
 interface Stat {
   jogadorPeladaId: string; nome: string; foto: string | null;
   posicao: string; tipo: string;
-  presencas: number; vitorias: number; gols: number; pontos: number;
+  presencas: number; vitorias: number; gols: number;
+  destaques: number; aguas: number; pontos: number;
 }
 interface Pelada { id: string; nome: string }
 
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+type OrdenarPor = "pontos" | "presencas" | "gols" | "destaques" | "aguas";
+const ORDENAR_OPCOES: { valor: OrdenarPor; label: string }[] = [
+  { valor: "pontos", label: "Pontos" },
+  { valor: "presencas", label: "Jogos" },
+  { valor: "gols", label: "Gols" },
+  { valor: "destaques", label: "Destaque" },
+  { valor: "aguas", label: "Água de salsicha" },
+];
 
 export default function EstatisticasPage() {
   const agora = new Date();
@@ -21,6 +31,7 @@ export default function EstatisticasPage() {
   const [peladaId, setPeladaId] = useState("");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
   const [filtroAno, setFiltroAno] = useState(agora.getFullYear());
+  const [ordenarPor, setOrdenarPor] = useState<OrdenarPor>("pontos");
   const [stats, setStats] = useState<Stat[]>([]);
 
   useEffect(() => {
@@ -35,7 +46,10 @@ export default function EstatisticasPage() {
   }, [peladaId, filtroMes, filtroAno]);
 
   const anos = [filtroAno - 1, filtroAno, filtroAno + 1];
-  const maxPontos = stats[0]?.pontos || 1;
+  const statsOrdenados = [...stats].sort(
+    (a, b) => b[ordenarPor] - a[ordenarPor] || b.pontos - a.pontos || b.gols - a.gols
+  );
+  const maxPontos = statsOrdenados[0]?.[ordenarPor] || 1;
 
   function Avatar({ nome, foto }: { nome: string; foto: string | null }) {
     if (foto) return <img src={`http://localhost:3001${foto}`} alt={nome} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />;
@@ -70,6 +84,17 @@ export default function EstatisticasPage() {
         </div>
       </div>
 
+      {/* Ordenação */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-medium text-slate-400">Ordenar por:</span>
+        {ORDENAR_OPCOES.map(op => (
+          <button key={op.valor} onClick={() => setOrdenarPor(op.valor)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${ordenarPor === op.valor ? "bg-green-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:border-green-300"}`}>
+            {op.label}
+          </button>
+        ))}
+      </div>
+
       {stats.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="flex flex-col items-center py-14 text-center">
@@ -82,7 +107,7 @@ export default function EstatisticasPage() {
         </Card>
       ) : (
         <div className="space-y-2.5">
-          {stats.map((s, i) => (
+          {statsOrdenados.map((s, i) => (
             <Card key={s.jogadorPeladaId} className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -96,17 +121,18 @@ export default function EstatisticasPage() {
                       <Badge variant="outline" className="text-xs">{s.posicao === "GOLEIRO" ? "🥅 Goleiro" : "⚽ Linha"}</Badge>
                     </div>
                     <div className="mt-1.5 w-full bg-slate-100 rounded-full h-1.5">
-                      <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${(s.pontos / maxPontos) * 100}%` }} />
+                      <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${(s[ordenarPor] / maxPontos) * 100}%` }} />
                     </div>
                     <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
                       <span>{s.presencas} jogos</span>
-                      <span>{s.vitorias} vitórias</span>
                       <span>{s.gols} gols</span>
+                      <span>{s.destaques} 🏆</span>
+                      <span>{s.aguas} 🧅</span>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-2xl font-bold text-green-600">{s.pontos}</p>
-                    <p className="text-xs text-slate-400">pontos</p>
+                    <p className="text-2xl font-bold text-green-600">{s[ordenarPor]}</p>
+                    <p className="text-xs text-slate-400">{ordenarPor === "pontos" ? "pontos" : ordenarPor === "presencas" ? "jogos" : ordenarPor === "gols" ? "gols" : ordenarPor === "destaques" ? "destaques" : "água salsicha"}</p>
                   </div>
                 </div>
               </CardContent>

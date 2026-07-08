@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Trophy, BarChart3, Target, Star } from "lucide-react";
+import { Target } from "lucide-react";
 
 interface Stat {
   jogadorPeladaId: string;
@@ -13,8 +13,28 @@ interface Stat {
   presencas: number;
   vitorias: number;
   gols: number;
+  destaques: number;
+  aguas: number;
   pontos: number;
 }
+
+type OrdenarPor = "pontos" | "presencas" | "gols" | "destaques" | "aguas";
+
+const ORDENAR_OPCOES: { valor: OrdenarPor; label: string }[] = [
+  { valor: "pontos", label: "Pontos" },
+  { valor: "presencas", label: "Jogos" },
+  { valor: "gols", label: "Gols" },
+  { valor: "destaques", label: "Destaque" },
+  { valor: "aguas", label: "Água de salsicha" },
+];
+
+const ORDENAR_META: Record<OrdenarPor, { sufixo: string; cor: string }> = {
+  pontos: { sufixo: "pts", cor: "text-green-700" },
+  presencas: { sufixo: "jogos", cor: "text-blue-600" },
+  gols: { sufixo: "gols", cor: "text-green-700" },
+  destaques: { sufixo: "🏆", cor: "text-amber-500" },
+  aguas: { sufixo: "🧅", cor: "text-orange-500" },
+};
 
 export default function PortalEstatisticasPage() {
   const { usuario } = useAuth();
@@ -22,6 +42,7 @@ export default function PortalEstatisticasPage() {
   const [artilharia, setArtilharia] = useState<{ posicao: number; nome: string; gols: number; foto: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"ranking" | "artilharia">("ranking");
+  const [ordenarPor, setOrdenarPor] = useState<OrdenarPor>("pontos");
 
   useEffect(() => {
     if (!usuario) return;
@@ -35,6 +56,10 @@ export default function PortalEstatisticasPage() {
   }, [usuario]);
 
   const BASE = "http://localhost:3001";
+
+  const statsOrdenados = [...stats].sort(
+    (a, b) => b[ordenarPor] - a[ordenarPor] || b.pontos - a.pontos || b.gols - a.gols
+  );
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
@@ -55,7 +80,16 @@ export default function PortalEstatisticasPage() {
         <div className="flex items-center justify-center py-12 text-slate-400">Carregando...</div>
       ) : tab === "ranking" ? (
         <div className="space-y-2">
-          {stats.map((s, i) => (
+          {/* Ordenação */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            {ORDENAR_OPCOES.map(op => (
+              <button key={op.valor} onClick={() => setOrdenarPor(op.valor)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${ordenarPor === op.valor ? "bg-green-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>
+                {op.label}
+              </button>
+            ))}
+          </div>
+          {statsOrdenados.map((s, i) => (
             <div key={s.jogadorPeladaId} className="bg-white rounded-xl border border-slate-100 p-3 flex items-center gap-3">
               <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${i === 0 ? "bg-yellow-400 text-white" : i === 1 ? "bg-slate-300 text-slate-700" : i === 2 ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"}`}>
                 {i + 1}
@@ -69,11 +103,11 @@ export default function PortalEstatisticasPage() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 text-sm truncate">{s.nome}</p>
-                <p className="text-xs text-slate-400">{s.presencas} presenças · {s.vitorias} vitórias · {s.gols} gols</p>
+                <p className="text-xs text-slate-400">{s.presencas} jogos · {s.gols} gols · {s.destaques} 🏆 · {s.aguas} 🧅</p>
               </div>
               <div className="text-right">
-                <p className="font-bold text-green-700 text-lg">{s.pontos}</p>
-                <p className="text-xs text-slate-400">pts</p>
+                <p className={`font-bold text-lg ${ORDENAR_META[ordenarPor].cor}`}>{s[ordenarPor]}</p>
+                <p className="text-xs text-slate-400">{ORDENAR_META[ordenarPor].sufixo}</p>
               </div>
             </div>
           ))}

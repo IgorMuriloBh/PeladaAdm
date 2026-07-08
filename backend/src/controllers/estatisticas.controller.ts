@@ -52,12 +52,27 @@ export async function estatisticasJogadores(req: AuthRequest, res: Response) {
           },
         },
       },
+      votacoes: {
+        where: {
+          partida: {
+            status: "REALIZADA",
+            ...(mes || ano ? {
+              data: {
+                ...(ano ? { gte: new Date(ano, (mes ?? 1) - 1, 1) } : {}),
+                ...(ano ? { lt: mes ? new Date(ano, mes, 1) : new Date(ano + 1, 0, 1) } : {}),
+              },
+            } : {}),
+          },
+        },
+      },
     },
   });
 
   const stats = jogadores.map(jp => {
     const presencas = jp.presencas.length;
     const totalGols = jp.gols.length;
+    const destaques = (jp as any).votacoes.filter((v: any) => v.tipo === "DESTAQUE").length;
+    const aguas = (jp as any).votacoes.filter((v: any) => v.tipo === "AGUA_SALSICHA").length;
 
     let vitorias = 0;
     for (const p of jp.presencas) {
@@ -72,7 +87,8 @@ export async function estatisticasJogadores(req: AuthRequest, res: Response) {
       else if (meuTime === "B" && golsB > golsA) vitorias++;
     }
 
-    const pontos = presencas * pts.presenca + vitorias * pts.vitoria + totalGols * pts.gol;
+    const pontos = presencas * pts.presenca + vitorias * pts.vitoria + totalGols * pts.gol
+      + destaques * pts.destaque + aguas * pts.agua;
     return {
       jogadorPeladaId: jp.id,
       nome: jp.jogador.nome,
@@ -82,6 +98,8 @@ export async function estatisticasJogadores(req: AuthRequest, res: Response) {
       presencas,
       vitorias,
       gols: totalGols,
+      destaques,
+      aguas,
       pontos,
     };
   });
