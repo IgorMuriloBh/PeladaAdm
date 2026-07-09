@@ -46,9 +46,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-slate-100 p-4">
       <Card className="w-full max-w-md shadow-lg border-0">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center">
-            <span className="text-3xl">⚽</span>
-          </div>
+          <img src="/logo.png" alt="Pelada ADM" className="mx-auto mb-4 w-20 h-20 rounded-full object-cover" />
           <CardTitle className="text-2xl font-bold text-slate-900">Pelada ADM</CardTitle>
           <CardDescription className="text-slate-500">Entre com sua conta para acessar o sistema</CardDescription>
         </CardHeader>

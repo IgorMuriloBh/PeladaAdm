@@ -126,9 +126,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-lg">⚽</span>
-          </div>
+          <img src="/logo.png" alt="Pelada ADM" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
           <div>
             <p className="font-bold text-slate-900 text-sm leading-tight">Pelada ADM</p>
             <p className="text-xs text-slate-400 truncate max-w-[140px]">{pelada.nome}</p>
@@ -143,9 +141,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b border-slate-200 flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-base">⚽</span>
-          </div>
+          <img src="/logo.png" alt="Pelada ADM" className="w-8 h-8 rounded-full object-cover" />
           <span className="font-bold text-slate-900 text-sm">{pelada.nome}</span>
         </div>
         <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg hover:bg-slate-100">

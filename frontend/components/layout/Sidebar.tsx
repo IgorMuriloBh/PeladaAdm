@@ -30,9 +30,7 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-        <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="text-lg">⚽</span>
-        </div>
+        <img src="/logo.png" alt="Pelada ADM" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
         <div>
           <p className="font-bold text-slate-900 text-sm leading-tight">Pelada ADM</p>
           <p className="text-xs text-slate-400">Gestão de pelada</p>
