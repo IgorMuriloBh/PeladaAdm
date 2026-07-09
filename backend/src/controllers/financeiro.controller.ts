@@ -302,3 +302,62 @@ export async function resumo(req: AuthRequest, res: Response) {
     resenha: { ...soma(resenhas as any, "valorDevido"), total_jogadores: resenhas.length, pagos: resenhas.filter(x => x.pago).length },
   });
 }
+
+// ─── VISÃO DO JOGADOR (somente leitura) ───────────────────────────────────────
+const CAT_RESENHA_LABEL: Record<string, string> = { BEBE: "Bebe", NAO_BEBE: "Não bebe", GOLEIRO_BEBE: "Goleiro/Bebe" };
+
+export async function meuFinanceiro(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req, true);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const jpId = req.jogadorPeladaId;
+  if (!jpId) { res.status(400).json({ error: "Seu usuário não está vinculado a um jogador" }); return; }
+
+  const jp = await prisma.jogadorPelada.findUnique({ where: { id: jpId } });
+  if (!jp) { res.status(404).json({ error: "Jogador não encontrado" }); return; }
+
+  const cfg = (pelada as any).configuracaoFinanceira;
+
+  const [pagamentos, resenhas] = await Promise.all([
+    prisma.pagamento.findMany({ where: { jogadorPeladaId: jpId }, orderBy: [{ ano: "desc" }, { mes: "desc" }] }),
+    prisma.resenhaPresenca.findMany({
+      where: { jogadorPeladaId: jpId },
+      include: { resenha: { include: { partida: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const mm = (m: number | null) => String(m ?? 0).padStart(2, "0");
+  const itensPagamento = pagamentos.map(p => ({
+    id: p.id,
+    tipo: p.tipo, // MENSALIDADE | DIARIA
+    descricao: `${p.tipo === "MENSALIDADE" ? "Mensalidade" : "Diária"} ${mm(p.mes)}/${p.ano ?? ""}`,
+    valor: p.valor,
+    pago: p.pago,
+    dataPagamento: p.dataPagamento,
+  }));
+  const itensResenha = resenhas.map(r => ({
+    id: r.id,
+    tipo: "RESENHA" as const,
+    descricao: `Resenha ${new Date(r.resenha.partida.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
+    categoria: CAT_RESENHA_LABEL[r.categoria] || r.categoria,
+    valor: r.valorDevido,
+    pago: r.pago,
+    dataPagamento: r.dataPagamento,
+  }));
+
+  const itens = [...itensPagamento, ...itensResenha];
+
+  res.json({
+    tipo: jp.tipo, // MENSALISTA | DIARISTA
+    valores: {
+      mensalista: cfg?.mensalistaValor ?? 0,
+      diarista: cfg?.diaristaValor ?? 0,
+      resenhaBebe: cfg?.resenhaBebe ?? 0,
+      resenhaNaoBebe: cfg?.resenhaNaoBebe ?? 0,
+      resenhaGoleiro: cfg?.resenhaGoleiro ?? 0,
+    },
+    pendentes: itens.filter(i => !i.pago),
+    realizados: itens.filter(i => i.pago),
+  });
+}

@@ -122,6 +122,7 @@ router.get("/portal/estatisticas", usuarioMiddleware, stats.estatisticasJogadore
 router.get("/portal/artilharia", usuarioMiddleware, stats.artilharia);
 router.get("/portal/destaques", usuarioMiddleware, votacao.listarVotacoes);
 router.get("/portal/pix", usuarioMiddleware, pix.listarPixPortal);
+router.get("/portal/meu-financeiro", usuarioMiddleware, fin.meuFinanceiro);
 
 // Partidas + Votação (todos os perfis)
 router.get("/portal/partidas", usuarioMiddleware, partida.listar);

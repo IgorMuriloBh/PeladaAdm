@@ -12,6 +12,7 @@ const NAV_JOGADOR = [
   { href: "/portal/peladas", label: "Peladas", icon: CalendarCheck },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/portal/votacao", label: "Votação", icon: Star },
+  { href: "/portal/meu-financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/portal/pix", label: "PIX", icon: QrCode },
 ];
 
