@@ -13,6 +13,7 @@ import * as sorteio from "../controllers/sorteio.controller";
 import * as usuario from "../controllers/usuario.controller";
 import * as alerta from "../controllers/alerta.controller";
 import * as importacao from "../controllers/importacao.controller";
+import * as pix from "../controllers/pix.controller";
 import multer from "multer";
 
 const uploadPlanilha = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -102,6 +103,11 @@ router.post("/peladas/:peladaId/alertas/testar", authMiddleware, alerta.testarEm
 router.get("/peladas/:peladaId/importacao/modelo", authMiddleware, importacao.baixarModelo);
 router.post("/peladas/:peladaId/importacao", authMiddleware, uploadPlanilha.single("planilha"), importacao.importarPlanilha);
 
+// ── Chaves PIX (Admin) ─────────────────────────────────────────────────────
+router.get("/peladas/:peladaId/pix", authMiddleware, pix.listarPix);
+router.post("/peladas/:peladaId/pix", authMiddleware, upload.single("imagem"), pix.criarPix);
+router.delete("/peladas/:peladaId/pix/:id", authMiddleware, pix.removerPix);
+
 // ── Confirmação de presença via token (pública) ───────────────────────────
 router.get("/confirmar/:token", alerta.buscarToken);
 router.post("/confirmar/:token", alerta.confirmarViaToken);
@@ -115,6 +121,7 @@ router.post("/confirmar/:token", alerta.confirmarViaToken);
 router.get("/portal/estatisticas", usuarioMiddleware, stats.estatisticasJogadores);
 router.get("/portal/artilharia", usuarioMiddleware, stats.artilharia);
 router.get("/portal/destaques", usuarioMiddleware, votacao.listarVotacoes);
+router.get("/portal/pix", usuarioMiddleware, pix.listarPixPortal);
 
 // Partidas + Votação (todos os perfis)
 router.get("/portal/partidas", usuarioMiddleware, partida.listar);

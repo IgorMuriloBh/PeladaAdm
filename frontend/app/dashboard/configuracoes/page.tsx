@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Settings, Bell, DollarSign, FileSpreadsheet, Download, Upload } from "lucide-react";
+import { Settings, Bell, DollarSign, FileSpreadsheet, Download, Upload, QrCode, Trash2, Plus } from "lucide-react";
 
 interface ConfigFinanceira {
   mensalistaValor: number; diaristaValor: number;
@@ -27,15 +27,28 @@ const TAB_LABELS = [
   { key: "geral", label: "Geral", icon: Settings },
   { key: "financeiro", label: "Financeiro", icon: DollarSign },
   { key: "alertas", label: "Alertas", icon: Bell },
+  { key: "pix", label: "PIX", icon: QrCode },
   { key: "importar", label: "Importar", icon: FileSpreadsheet },
 ] as const;
-type Tab = "geral" | "financeiro" | "alertas" | "importar";
+type Tab = "geral" | "financeiro" | "alertas" | "pix" | "importar";
 
 interface ResultadoImportacao {
   processados: number; jogadoresCriados: number; usuariosCriados: number;
   presencasLancadas: number; golsLancados: number; destaquesLancados: number; aguasLancadas: number;
   erros: string[];
 }
+
+interface ChavePix {
+  id: string; tipo: string; valor: string | null; imagem: string | null; descricao: string | null;
+}
+const PIX_TIPOS = [
+  { value: "TELEFONE", label: "Telefone" },
+  { value: "CPF_CNPJ", label: "CPF/CNPJ" },
+  { value: "EMAIL", label: "E-mail" },
+  { value: "ALEATORIA", label: "Chave aleatória" },
+  { value: "QRCODE", label: "QR Code (imagem)" },
+];
+const PIX_LABEL: Record<string, string> = Object.fromEntries(PIX_TIPOS.map(t => [t.value, t.label]));
 
 export default function ConfiguracoesPage() {
   const [peladas, setPeladas] = useState<Pelada[]>([]);
@@ -61,6 +74,13 @@ export default function ConfiguracoesPage() {
   const [loadingPelada, setLoadingPelada] = useState(false);
   const [loadingAlerta, setLoadingAlerta] = useState(false);
   const [loadingTeste, setLoadingTeste] = useState(false);
+  // PIX
+  const [chavesPix, setChavesPix] = useState<ChavePix[]>([]);
+  const [pixTipo, setPixTipo] = useState("TELEFONE");
+  const [pixValor, setPixValor] = useState("");
+  const [pixDescricao, setPixDescricao] = useState("");
+  const [pixImagem, setPixImagem] = useState<File | null>(null);
+  const [loadingPix, setLoadingPix] = useState(false);
 
   useEffect(() => {
     api.get("/peladas").then(r => { setPeladas(r.data); if (r.data.length) setPeladaId(r.data[0].id); });
@@ -76,7 +96,36 @@ export default function ConfiguracoesPage() {
       }
     }).catch(() => {});
     api.get(`/peladas/${peladaId}/alertas`).then(r => setAlertaCfg(r.data)).catch(() => {});
+    api.get(`/peladas/${peladaId}/pix`).then(r => setChavesPix(r.data)).catch(() => {});
   }, [peladaId]);
+
+  async function adicionarPix(e: React.FormEvent) {
+    e.preventDefault();
+    if (pixTipo === "QRCODE" && !pixImagem) { toast.error("Envie a imagem do QR Code"); return; }
+    if (pixTipo !== "QRCODE" && !pixValor.trim()) { toast.error("Informe o valor da chave"); return; }
+    setLoadingPix(true);
+    try {
+      const fd = new FormData();
+      fd.append("tipo", pixTipo);
+      if (pixDescricao.trim()) fd.append("descricao", pixDescricao.trim());
+      if (pixTipo === "QRCODE") fd.append("imagem", pixImagem as File);
+      else fd.append("valor", pixValor.trim());
+      await api.post(`/peladas/${peladaId}/pix`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const r = await api.get(`/peladas/${peladaId}/pix`);
+      setChavesPix(r.data);
+      setPixValor(""); setPixDescricao(""); setPixImagem(null);
+      toast.success("Chave PIX adicionada!");
+    } catch (err: any) { toast.error(err.response?.data?.error || "Erro ao adicionar chave"); }
+    finally { setLoadingPix(false); }
+  }
+
+  async function removerPix(id: string) {
+    try {
+      await api.delete(`/peladas/${peladaId}/pix/${id}`);
+      setChavesPix(cs => cs.filter(c => c.id !== id));
+      toast.success("Chave removida");
+    } catch { toast.error("Erro ao remover chave"); }
+  }
 
   async function salvarFinanceiro(e: React.FormEvent) {
     e.preventDefault();
@@ -362,6 +411,86 @@ export default function ConfiguracoesPage() {
             </Card>
           )}
         </form>
+      )}
+
+      {/* ── Aba PIX ─────────────────────────────────────────────────────────── */}
+      {tab === "pix" && (
+        <div className="space-y-4">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4 text-slate-500" /> Chaves PIX</CardTitle>
+              <p className="text-xs text-slate-400">As chaves cadastradas aqui ficam visíveis para os jogadores no menu PIX, para facilitar os pagamentos.</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Form nova chave */}
+              <form onSubmit={adicionarPix} className="bg-slate-50 rounded-lg p-4 space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Tipo de chave</Label>
+                    <Select value={pixTipo} onValueChange={v => { setPixTipo(v); setPixValor(""); setPixImagem(null); }}>
+                      <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PIX_TIPOS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Descrição (opcional)</Label>
+                    <Input placeholder="Ex: Conta do tesoureiro" value={pixDescricao} onChange={e => setPixDescricao(e.target.value)} className="bg-white" />
+                  </div>
+                </div>
+
+                {pixTipo === "QRCODE" ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Imagem do QR Code</Label>
+                    <input type="file" accept="image/*" onChange={e => setPixImagem(e.target.files?.[0] || null)}
+                      className="w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:text-xs file:font-semibold file:cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white" />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
+                      {pixTipo === "TELEFONE" ? "Telefone" : pixTipo === "CPF_CNPJ" ? "CPF ou CNPJ" : pixTipo === "EMAIL" ? "E-mail" : "Chave aleatória"}
+                    </Label>
+                    <Input
+                      value={pixValor} onChange={e => setPixValor(e.target.value)} className="bg-white"
+                      placeholder={pixTipo === "TELEFONE" ? "+55 31 99999-9999" : pixTipo === "CPF_CNPJ" ? "000.000.000-00" : pixTipo === "EMAIL" ? "pix@email.com" : "chave-aleatoria-uuid"}
+                    />
+                  </div>
+                )}
+
+                <Button type="submit" className="bg-green-600 hover:bg-green-700 gap-2" disabled={loadingPix}>
+                  <Plus className="w-4 h-4" /> {loadingPix ? "Adicionando..." : "Adicionar chave"}
+                </Button>
+              </form>
+
+              {/* Lista de chaves */}
+              {chavesPix.length === 0 ? (
+                <p className="text-center text-slate-400 py-6 text-sm">Nenhuma chave PIX cadastrada.</p>
+              ) : (
+                <div className="space-y-2">
+                  {chavesPix.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 border border-slate-100 rounded-xl p-3">
+                      {c.tipo === "QRCODE" && c.imagem ? (
+                        <img src={`http://localhost:3001${c.imagem}`} alt="QR Code" className="w-12 h-12 rounded object-cover border border-slate-100" />
+                      ) : (
+                        <div className="w-12 h-12 rounded bg-green-50 flex items-center justify-center flex-shrink-0">
+                          <QrCode className="w-5 h-5 text-green-600" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-500">{PIX_LABEL[c.tipo]}{c.descricao ? ` · ${c.descricao}` : ""}</p>
+                        <p className="text-sm font-medium text-slate-800 truncate">{c.tipo === "QRCODE" ? "Imagem do QR Code" : c.valor}</p>
+                      </div>
+                      <button onClick={() => removerPix(c.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* ── Aba Importar ───────────────────────────────────────────────────── */}

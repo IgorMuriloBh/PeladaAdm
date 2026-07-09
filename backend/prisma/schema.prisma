@@ -40,6 +40,7 @@ model Pelada {
 
   configuracaoFinanceira ConfiguracaoFinanceira?
   configuracaoAlerta     ConfiguracaoAlerta?
+  chavesPix              ChavePix[]
   jogadores              JogadorPelada[]
   partidas               Partida[]
   usuarios               Usuario[]
@@ -304,6 +305,26 @@ enum RoleUsuario {
   ADMINISTRADOR
   JOGADOR
   OPERADOR
+}
+
+model ChavePix {
+  id        String       @id @default(cuid())
+  tipo      TipoChavePix
+  valor     String?      // chave (telefone/cpf-cnpj/email/aleatória)
+  imagem    String?      // caminho da imagem do QR Code
+  descricao String?      // rótulo opcional (ex: "Banco do Tesoureiro")
+  createdAt DateTime     @default(now())
+
+  peladaId String
+  pelada   Pelada @relation(fields: [peladaId], references: [id])
+}
+
+enum TipoChavePix {
+  TELEFONE
+  CPF_CNPJ
+  EMAIL
+  ALEATORIA
+  QRCODE
 }
 
 model ConfiguracaoAlerta {
