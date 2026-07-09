@@ -14,7 +14,14 @@ export async function listar(req: AuthRequest, res: Response) {
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidas = await prisma.partida.findMany({
-    where: { peladaId },
+    // Exclui as partidas sintéticas geradas pela importação de histórico (01/01)
+    where: {
+      peladaId,
+      OR: [
+        { observacoes: null },
+        { observacoes: { not: { startsWith: "Histórico importado" } } },
+      ],
+    },
     include: {
       _count: { select: { presencas: true } },
       presencas: { include: { jogadorPelada: { include: { jogador: true } } }, orderBy: { posicaoFila: "asc" } },

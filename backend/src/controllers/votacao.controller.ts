@@ -9,7 +9,16 @@ export async function listarVotacoes(req: AuthRequest, res: Response) {
   const peladaId = getPeladaId(req);
 
   const votacoes = await prisma.votacao.findMany({
-    where: { partida: { peladaId } },
+    // Exclui destaques lançados na partida sintética de histórico (01/01)
+    where: {
+      partida: {
+        peladaId,
+        OR: [
+          { observacoes: null },
+          { observacoes: { not: { startsWith: "Histórico importado" } } },
+        ],
+      },
+    },
     include: {
       jogadorPelada: { include: { jogador: true } },
       partida: { select: { data: true } },

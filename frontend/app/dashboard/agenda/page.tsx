@@ -71,8 +71,12 @@ export default function AgendaPage() {
     } catch { toast.error("Erro ao criar partida"); }
   }
 
-  const proximas = partidas.filter(p => new Date(p.data) >= new Date() && p.status !== "CANCELADA");
-  const passadas = partidas.filter(p => new Date(p.data) < new Date() || p.status === "REALIZADA");
+  const proximas = partidas.filter(p => new Date(p.data) >= new Date() && p.status !== "CANCELADA" && p.status !== "REALIZADA");
+  // Últimas 4 partidas finalizadas/realizadas (mais recentes primeiro)
+  const passadas = partidas
+    .filter(p => p.status === "REALIZADA")
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+    .slice(0, 4);
 
   function confirmados(p: Partida) { return p.presencas?.filter(x => x.status === "CONFIRMADO").length ?? 0; }
   function espera(p: Partida) { return p.presencas?.filter(x => x.status === "LISTA_ESPERA").length ?? 0; }
@@ -181,7 +185,7 @@ export default function AgendaPage() {
             <section>
               <h2 className="text-base font-semibold text-slate-400 mb-3">Partidas anteriores</h2>
               <div className="space-y-2">
-                {passadas.slice(0, 5).map(p => {
+                {passadas.map(p => {
                   const dt = new Date(p.data);
                   return (
                     <Link key={p.id} href={`/dashboard/agenda/${p.id}?peladaId=${peladaId}`}>
