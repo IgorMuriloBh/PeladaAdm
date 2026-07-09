@@ -71,12 +71,14 @@ export default function AgendaPage() {
     } catch { toast.error("Erro ao criar partida"); }
   }
 
-  const proximas = partidas.filter(p => new Date(p.data) >= new Date() && p.status !== "CANCELADA" && p.status !== "REALIZADA");
-  // Últimas 4 partidas finalizadas/realizadas (mais recentes primeiro)
-  const passadas = partidas
-    .filter(p => p.status === "REALIZADA")
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-    .slice(0, 4);
+  // Próximas: ainda por acontecer (agendadas/confirmadas)
+  const proximas = partidas.filter(p => ["AGENDADA", "CONFIRMADA"].includes(p.status));
+  // Anteriores: em andamento + realizadas + canceladas.
+  // As em andamento aparecem sempre (para poder finalizar); das concluídas, as 4 mais recentes.
+  const ordemDesc = (a: Partida, b: Partida) => new Date(b.data).getTime() - new Date(a.data).getTime();
+  const emAndamento = partidas.filter(p => p.status === "EM_ANDAMENTO").sort(ordemDesc);
+  const concluidas = partidas.filter(p => ["REALIZADA", "CANCELADA"].includes(p.status)).sort(ordemDesc).slice(0, 4);
+  const passadas = [...emAndamento, ...concluidas];
 
   function confirmados(p: Partida) { return p.presencas?.filter(x => x.status === "CONFIRMADO").length ?? 0; }
   function espera(p: Partida) { return p.presencas?.filter(x => x.status === "LISTA_ESPERA").length ?? 0; }
