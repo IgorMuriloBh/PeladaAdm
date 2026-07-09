@@ -148,6 +148,42 @@ export async function marcarDiaria(req: AuthRequest, res: Response) {
 
 // ─── RESENHA ─────────────────────────────────────────────────────────────────
 
+// Gera a resenha de uma partida, opcionalmente já listando os presentes
+// confirmados (para controle de pagamento). Idempotente: se a resenha já
+// existir, apenas complementa os presentes que ainda não estiverem nela.
+// Categoria padrão: GOLEIRO_BEBE para goleiros, NAO_BEBE para os demais.
+export async function gerarResenhaComConfirmados(peladaId: string, partidaId: string) {
+  const cfg = await prisma.configuracaoFinanceira.findUnique({ where: { peladaId } });
+  const valorNaoBebe = cfg?.resenhaNaoBebe ?? 40;
+  const valorGoleiro = cfg?.resenhaGoleiro ?? 40;
+
+  let resenha = await prisma.resenha.findUnique({ where: { partidaId }, include: { presencas: true } });
+  if (!resenha) {
+    const criada = await prisma.resenha.create({ data: { partidaId } });
+    resenha = { ...criada, presencas: [] } as any;
+  }
+
+  const confirmados = await prisma.presenca.findMany({
+    where: { partidaId, status: "CONFIRMADO" },
+    include: { jogadorPelada: true },
+  });
+
+  const jaNaResenha = new Set(resenha!.presencas.map(p => p.jogadorPeladaId));
+  const novos = confirmados
+    .filter(pr => !jaNaResenha.has(pr.jogadorPeladaId))
+    .map(pr => ({
+      resenhaId: resenha!.id,
+      jogadorPeladaId: pr.jogadorPeladaId,
+      categoria: (pr.jogadorPelada.posicao === "GOLEIRO" ? "GOLEIRO_BEBE" : "NAO_BEBE") as any,
+      valorDevido: pr.jogadorPelada.posicao === "GOLEIRO" ? valorGoleiro : valorNaoBebe,
+    }));
+
+  if (novos.length > 0) {
+    await prisma.resenhaPresenca.createMany({ data: novos });
+  }
+  return resenha!.id;
+}
+
 export async function criarResenha(req: AuthRequest, res: Response) {
   const pelada = await resolvePelada(req, true);
   const peladaId = getPeladaId(req);
@@ -160,7 +196,9 @@ export async function criarResenha(req: AuthRequest, res: Response) {
   const existe = await prisma.resenha.findUnique({ where: { partidaId } });
   if (existe) { res.status(409).json({ error: "Resenha já existe para esta partida" }); return; }
 
-  const resenha = await prisma.resenha.create({ data: { partidaId } });
+  // Cria a resenha já listando os confirmados da pelada (controle de pagamento)
+  await gerarResenhaComConfirmados(peladaId, partidaId);
+  const resenha = await prisma.resenha.findUnique({ where: { partidaId } });
   res.status(201).json(resenha);
 }
 

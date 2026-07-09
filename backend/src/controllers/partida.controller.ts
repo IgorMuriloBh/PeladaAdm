@@ -5,6 +5,7 @@ import { resolvePelada, getPeladaId } from "../lib/peladaHelper";
 import { proximasOcorrencias } from "../utils/agenda";
 import { sendEmail, templateLembrete, templateVagaDisponivel } from "../lib/email";
 import { dispararAlertaNovaPartida, dispararAlertaEncerramentoPelada } from "./alerta.controller";
+import { gerarResenhaComConfirmados } from "./financeiro.controller";
 
 
 export async function listar(req: AuthRequest, res: Response) {
@@ -93,6 +94,15 @@ export async function atualizar(req: AuthRequest, res: Response) {
   // Dispara alerta de encerramento quando status muda para REALIZADA
   if (status === "REALIZADA" && anteriorPartida?.status !== "REALIZADA") {
     dispararAlertaEncerramentoPelada(peladaId, partida.id).catch(() => {});
+  }
+
+  // Cria resenha automaticamente ao confirmar a pelada, se configurado
+  if (status === "CONFIRMADA" && anteriorPartida?.status !== "CONFIRMADA") {
+    prisma.configuracaoFinanceira.findUnique({ where: { peladaId } })
+      .then(cfg => {
+        if (cfg?.criarResenhaComPelada) return gerarResenhaComConfirmados(peladaId, partida.id);
+      })
+      .catch(() => {});
   }
 }
 

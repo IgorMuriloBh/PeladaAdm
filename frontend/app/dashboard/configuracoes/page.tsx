@@ -14,6 +14,7 @@ interface ConfigFinanceira {
   resenhaBebe: number; resenhaNaoBebe: number; resenhaGoleiro: number;
   pontoPresenca: number; pontoVitoria: number; pontoGol: number;
   pontoDestaque: number; pontoAguaSalsicha: number;
+  criarResenhaComPelada: boolean;
 }
 interface ConfigAlerta {
   ativo: boolean; smtpHost: string; smtpPort: number; smtpUser: string; smtpPass: string;
@@ -44,6 +45,7 @@ export default function ConfiguracoesPage() {
     mensalistaValor: 90, diaristaValor: 30,
     resenhaBebe: 85, resenhaNaoBebe: 40, resenhaGoleiro: 40,
     pontoPresenca: 1, pontoVitoria: 3, pontoGol: 1, pontoDestaque: 5, pontoAguaSalsicha: -3,
+    criarResenhaComPelada: false,
   });
   const [formPelada, setFormPelada] = useState({ horario: "", maxJogadores: "", horaAbreLista: "", horaFechaLista: "", senhaPadrao: "senha001" });
   const [arquivoImport, setArquivoImport] = useState<File | null>(null);
@@ -70,7 +72,7 @@ export default function ConfiguracoesPage() {
       setFormPelada({ horario: r.data.horario, maxJogadores: String(r.data.maxJogadores), horaAbreLista: r.data.horaAbreLista, horaFechaLista: r.data.horaFechaLista, senhaPadrao: r.data.senhaPadrao || "senha001" });
       if (r.data.configuracaoFinanceira) {
         const c = r.data.configuracaoFinanceira;
-        setCfg({ mensalistaValor: c.mensalistaValor, diaristaValor: c.diaristaValor, resenhaBebe: c.resenhaBebe, resenhaNaoBebe: c.resenhaNaoBebe, resenhaGoleiro: c.resenhaGoleiro, pontoPresenca: c.pontoPresenca, pontoVitoria: c.pontoVitoria, pontoGol: c.pontoGol, pontoDestaque: c.pontoDestaque, pontoAguaSalsicha: c.pontoAguaSalsicha });
+        setCfg({ mensalistaValor: c.mensalistaValor, diaristaValor: c.diaristaValor, resenhaBebe: c.resenhaBebe, resenhaNaoBebe: c.resenhaNaoBebe, resenhaGoleiro: c.resenhaGoleiro, pontoPresenca: c.pontoPresenca, pontoVitoria: c.pontoVitoria, pontoGol: c.pontoGol, pontoDestaque: c.pontoDestaque, pontoAguaSalsicha: c.pontoAguaSalsicha, criarResenhaComPelada: !!c.criarResenhaComPelada });
       }
     }).catch(() => {});
     api.get(`/peladas/${peladaId}/alertas`).then(r => setAlertaCfg(r.data)).catch(() => {});
@@ -160,7 +162,8 @@ export default function ConfiguracoesPage() {
     );
   }
 
-  function Campo({ label, campo, prefixo }: { label: string; campo: keyof ConfigFinanceira; prefixo?: string }) {
+  type CampoNumerico = { [K in keyof ConfigFinanceira]: ConfigFinanceira[K] extends number ? K : never }[keyof ConfigFinanceira];
+  function Campo({ label, campo, prefixo }: { label: string; campo: CampoNumerico; prefixo?: string }) {
     return (
       <div className="space-y-1.5">
         <Label className="text-sm">{label}</Label>
@@ -233,6 +236,13 @@ export default function ConfiguracoesPage() {
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Resenha</p>
                 <div className="flex flex-wrap gap-4"><Campo label="Bebe 🍺" campo="resenhaBebe" prefixo="R$" /><Campo label="Não bebe 🥤" campo="resenhaNaoBebe" prefixo="R$" /><Campo label="Goleiro 🥅" campo="resenhaGoleiro" prefixo="R$" /></div>
+                <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3 mt-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">Criar resenha junto com a pelada</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Ao confirmar a pelada, gera a resenha automaticamente já listando todos os confirmados</p>
+                  </div>
+                  <Toggle checked={cfg.criarResenhaComPelada} onChange={v => setCfg(c => ({ ...c, criarResenhaComPelada: v }))} />
+                </div>
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Pontuação do ranking</p>

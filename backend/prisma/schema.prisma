@@ -57,6 +57,7 @@ model ConfiguracaoFinanceira {
   pontoGol          Int     @default(1)
   pontoDestaque     Int     @default(5)
   pontoAguaSalsicha Int     @default(-3)
+  criarResenhaComPelada Boolean @default(false)
   updatedAt         DateTime @updatedAt
 
   peladaId String @unique
