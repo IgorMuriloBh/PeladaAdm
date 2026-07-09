@@ -129,6 +129,9 @@ router.get("/portal/partidas", usuarioMiddleware, partida.listar);
 // Jogador confirma/cancela a própria presença
 router.post("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.confirmarMinhaPresenca);
 router.delete("/portal/partidas/:partidaId/minha-presenca", usuarioMiddleware, partida.removerMinhaPresenca);
+router.get("/portal/partidas/:partidaId/minha-confirmacao", usuarioMiddleware, partida.minhaConfirmacao);
+router.post("/portal/partidas/:partidaId/confirmar", usuarioMiddleware, partida.confirmarPresencaOpcoes);
+router.delete("/portal/partidas/:partidaId/confirmar", usuarioMiddleware, partida.cancelarMinhaConfirmacao);
 // Enquete dos jogadores (VotoJogador)
 router.get("/portal/partidas/:partidaId/votos", usuarioMiddleware, votacao.resultadoVotoJogador);
 router.post("/portal/partidas/:partidaId/votos", usuarioMiddleware, votacao.registrarVotoJogador);
