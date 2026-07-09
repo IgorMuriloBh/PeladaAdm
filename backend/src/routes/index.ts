@@ -43,8 +43,8 @@ router.put("/peladas/:peladaId/jogadores/:id", authMiddleware, fotoFields, jogad
 
 // ── Usuários (Admin cria/gerencia) ─────────────────────────────────────────
 router.get("/peladas/:peladaId/usuarios", authMiddleware, usuario.listarUsuarios);
-router.post("/peladas/:peladaId/usuarios", authMiddleware, usuario.criarUsuario);
-router.put("/peladas/:peladaId/usuarios/:id", authMiddleware, usuario.atualizarUsuario);
+router.post("/peladas/:peladaId/usuarios", authMiddleware, upload.single("foto"), usuario.criarUsuario);
+router.put("/peladas/:peladaId/usuarios/:id", authMiddleware, upload.single("foto"), usuario.atualizarUsuario);
 router.delete("/peladas/:peladaId/usuarios/:id", authMiddleware, usuario.removerUsuario);
 
 // ── Partidas / Agenda (Admin) ─────────────────────────────────────────────

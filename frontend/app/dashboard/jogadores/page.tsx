@@ -26,6 +26,7 @@ export default function JogadoresPage() {
   const [editando, setEditando] = useState<JogadorPelada | null>(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", celular: "", tipo: "DIARISTA", posicao: "LINHA", nivel: "3" });
+  const [foto, setFoto] = useState<File | null>(null);
 
   useEffect(() => {
     api.get("/peladas").then(r => { setPeladas(r.data); if (r.data.length > 0) setPeladaId(r.data[0].id); });
@@ -34,10 +35,11 @@ export default function JogadoresPage() {
   const load = () => { if (peladaId) api.get(`/peladas/${peladaId}/jogadores`).then(r => setJogadores(r.data)).catch(() => {}); };
   useEffect(() => { load(); }, [peladaId]);
 
-  function abrirNovo() { setEditando(null); setForm({ nome: "", email: "", celular: "", tipo: "DIARISTA", posicao: "LINHA", nivel: "3" }); setOpen(true); }
+  function abrirNovo() { setEditando(null); setForm({ nome: "", email: "", celular: "", tipo: "DIARISTA", posicao: "LINHA", nivel: "3" }); setFoto(null); setOpen(true); }
   function abrirEditar(jp: JogadorPelada) {
     setEditando(jp);
     setForm({ nome: jp.jogador.nome, email: jp.jogador.email, celular: jp.jogador.celular || "", tipo: jp.tipo, posicao: jp.posicao, nivel: String(jp.nivel) });
+    setFoto(null);
     setOpen(true);
   }
 
@@ -45,11 +47,15 @@ export default function JogadoresPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      if (foto) fd.append("fotoNormal", foto);
+      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (editando) {
-        await api.put(`/peladas/${peladaId}/jogadores/${editando.id}`, form);
+        await api.put(`/peladas/${peladaId}/jogadores/${editando.id}`, fd, cfg);
         toast.success("Jogador atualizado!");
       } else {
-        await api.post(`/peladas/${peladaId}/jogadores`, form);
+        await api.post(`/peladas/${peladaId}/jogadores`, fd, cfg);
         toast.success("Jogador adicionado!");
       }
       setOpen(false); load();
@@ -113,6 +119,15 @@ export default function JogadoresPage() {
                   <div className="col-span-2 space-y-1.5">
                     <Label>Celular</Label>
                     <Input placeholder="(11) 99999-9999" value={form.celular} onChange={e => setForm(f => ({ ...f, celular: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Foto de rosto (opcional)</Label>
+                    {editando?.jogador.fotoNormal && !foto && (
+                      <img src={`http://localhost:3001${editando.jogador.fotoNormal}`} alt="" className="w-14 h-14 rounded-full object-cover mb-1" />
+                    )}
+                    <input type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] || null)}
+                      className="w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:text-xs file:font-semibold file:cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white" />
+                    <p className="text-xs text-slate-400">Usada nas artes do Instagram (destaque / água de salsicha).</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label>Tipo</Label>

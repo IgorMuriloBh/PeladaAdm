@@ -290,6 +290,7 @@ model Usuario {
   senha     String
   role      RoleUsuario @default(JOGADOR)
   ativo     Boolean     @default(true)
+  foto      String?
   precisaTrocarSenha Boolean @default(false)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt

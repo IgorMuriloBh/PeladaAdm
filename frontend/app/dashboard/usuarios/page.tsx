@@ -36,6 +36,7 @@ export default function UsuariosPage() {
   const [open, setOpen] = useState(false);
   const [editItem, setEditItem] = useState<Usuario | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", senha: "", role: "JOGADOR", jogadorPeladaId: "" });
+  const [foto, setFoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -58,12 +59,14 @@ export default function UsuariosPage() {
 
   function resetForm() {
     setForm({ nome: "", email: "", senha: "", role: "JOGADOR", jogadorPeladaId: "" });
+    setFoto(null);
     setEditItem(null);
   }
 
   function openEdit(u: Usuario) {
     setEditItem(u);
     setForm({ nome: u.nome, email: u.email, senha: "", role: u.role, jogadorPeladaId: u.jogadorPelada?.id || "" });
+    setFoto(null);
     setOpen(true);
   }
 
@@ -76,14 +79,19 @@ export default function UsuariosPage() {
     }
     setLoading(true);
     try {
-      const payload: Record<string, string> = { nome: form.nome, email: form.email, role: form.role, jogadorPeladaId: form.jogadorPeladaId };
-      if (form.senha) payload.senha = form.senha;
+      const fd = new FormData();
+      fd.append("nome", form.nome);
+      fd.append("email", form.email);
+      fd.append("role", form.role);
+      fd.append("jogadorPeladaId", form.jogadorPeladaId);
+      if (form.senha) fd.append("senha", form.senha);
+      if (foto) fd.append("foto", foto);
 
       if (editItem) {
-        await api.put(`/peladas/${peladaId}/usuarios/${editItem.id}`, payload);
+        await api.put(`/peladas/${peladaId}/usuarios/${editItem.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         toast.success("Usuário atualizado!");
       } else {
-        await api.post(`/peladas/${peladaId}/usuarios`, payload);
+        await api.post(`/peladas/${peladaId}/usuarios`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         toast.success("Usuário criado!");
       }
       setOpen(false);
@@ -148,6 +156,12 @@ export default function UsuariosPage() {
                 <Label>Senha {editItem ? "(deixe em branco para não alterar)" : "(opcional)"}</Label>
                 <Input type="password" placeholder={editItem ? "••••••••" : "Em branco = senha padrão da pelada"} value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))} />
                 {!editItem && <p className="text-xs text-slate-400">Sem senha, o usuário recebe a senha padrão e deve trocá-la no primeiro login.</p>}
+              </div>
+              <div className="space-y-1">
+                <Label>Foto de rosto (opcional)</Label>
+                <input type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:text-xs file:font-semibold file:cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white" />
+                <p className="text-xs text-slate-400">Se vincular a um jogador, a foto é replicada e usada nas artes do Instagram.</p>
               </div>
               <div className="space-y-1">
                 <Label>Perfil *</Label>
