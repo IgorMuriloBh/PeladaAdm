@@ -158,11 +158,14 @@ export default function PortalMeuFinanceiroPage() {
           <div className="mt-4 bg-white border border-slate-100 rounded-xl p-4">
             <p className="text-sm font-semibold text-slate-700 mb-3">Tabela de valores</p>
             <div className="space-y-1.5 text-sm">
-              {isMensalista ? (
-                <div className="flex justify-between"><span className="text-slate-500">Mensalidade (mensalista)</span><span className="font-medium text-slate-800">{money(dados.valores.mensalista)}</span></div>
-              ) : (
-                <div className="flex justify-between"><span className="text-slate-500">Diária (diarista)</span><span className="font-medium text-slate-800">{money(dados.valores.diarista)}</span></div>
-              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Mensalidade{isMensalista ? " (seu plano)" : ""}</span>
+                <span className="font-medium text-slate-800">{money(dados.valores.mensalista)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Diária{!isMensalista ? " (seu plano)" : ""}</span>
+                <span className="font-medium text-slate-800">{money(dados.valores.diarista)}</span>
+              </div>
               <div className="border-t border-slate-100 my-2" />
               <p className="text-xs font-semibold text-slate-400 uppercase">Resenha</p>
               <div className="flex justify-between"><span className="text-slate-500">Bebe 🍺</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaBebe)}</span></div>
