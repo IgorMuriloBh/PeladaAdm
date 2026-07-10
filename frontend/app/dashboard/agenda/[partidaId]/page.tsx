@@ -13,7 +13,7 @@ interface Jogador { id: string; nome: string; fotoNormal: string | null; celular
 interface JogadorPelada { id: string; posicao: string; tipo: string; nivel: number; jogador: Jogador }
 interface Presenca {
   id: string; status: string; posicaoFila: number | null;
-  time: string | null; notaJogo: number | null;
+  time: string | null; notaJogo: number | null; convidado?: boolean;
   jogadorPelada: JogadorPelada;
 }
 interface Gol { id: string; jogadorPeladaId: string; jogadorPelada: { jogador: { nome: string } } }
@@ -38,6 +38,7 @@ export default function PartidaPage() {
   const [partida, setPartida] = useState<Partida | null>(null);
   const [jogadores, setJogadores] = useState<JogadorPelada[]>([]);
   const [jogadorSelecionado, setJogadorSelecionado] = useState("");
+  const [comoConvidado, setComoConvidado] = useState(false);
   const [loadingLembrete, setLoadingLembrete] = useState(false);
   const [loadingSorteio, setLoadingSorteio] = useState(false);
   const [gols, setGols] = useState<Gol[]>([]);
@@ -60,10 +61,10 @@ export default function PartidaPage() {
   async function confirmar() {
     if (!jogadorSelecionado) { toast.error("Selecione um jogador"); return; }
     try {
-      const { data } = await api.post(`/peladas/${peladaId}/partidas/${partidaId}/presencas`, { jogadorPeladaId: jogadorSelecionado });
+      const { data } = await api.post(`/peladas/${peladaId}/partidas/${partidaId}/presencas`, { jogadorPeladaId: jogadorSelecionado, convidado: comoConvidado });
       if (data.status === "LISTA_ESPERA") toast.info(`Jogador na fila de espera — posição ${data.posicaoFila}`);
-      else toast.success("Presença confirmada!");
-      setJogadorSelecionado(""); load();
+      else toast.success(comoConvidado ? "Convidado incluído!" : "Presença confirmada!");
+      setJogadorSelecionado(""); setComoConvidado(false); load();
     } catch (e: any) { toast.error(e.response?.data?.error || "Erro ao confirmar"); }
   }
 
@@ -171,6 +172,7 @@ export default function PartidaPage() {
               <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                 <Avatar nome={p.jogadorPelada.jogador.nome} foto={p.jogadorPelada.jogador.fotoNormal} />
                 <span className="text-sm font-medium text-slate-800 flex-1 truncate">{p.jogadorPelada.jogador.nome}</span>
+                {p.convidado && <Badge className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100 border-0">Convidado</Badge>}
                 <Badge variant="outline" className="text-xs hidden sm:flex">{p.jogadorPelada.tipo === "MENSALISTA" ? "M" : "D"}</Badge>
                 <button onClick={() => remover(p.id)} className="p-1 rounded hover:bg-red-50 hover:text-red-500 text-slate-300 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
@@ -364,6 +366,10 @@ export default function PartidaPage() {
               <UserCheck className="w-4 h-4" />
             </Button>
           </div>
+          <label className="flex items-center gap-2 mt-2.5 text-sm text-slate-600 cursor-pointer">
+            <input type="checkbox" checked={comoConvidado} onChange={e => setComoConvidado(e.target.checked)} className="w-4 h-4 rounded border-slate-300 accent-purple-600" />
+            Incluir como convidado
+          </label>
         </CardContent>
       </Card>
 

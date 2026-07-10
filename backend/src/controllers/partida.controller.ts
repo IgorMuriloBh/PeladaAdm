@@ -119,7 +119,7 @@ export async function confirmarPresenca(req: AuthRequest, res: Response) {
   if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
 
   const partidaId = req.params.id as string;
-  const { jogadorPeladaId } = req.body;
+  const { jogadorPeladaId, convidado } = req.body;
   if (!jogadorPeladaId) { res.status(400).json({ error: "jogadorPeladaId é obrigatório" }); return; }
 
   const partida = await prisma.partida.findFirst({ where: { id: partidaId, peladaId } });
@@ -138,10 +138,73 @@ export async function confirmarPresenca(req: AuthRequest, res: Response) {
   }
 
   const presenca = await prisma.presenca.create({
-    data: { partidaId, jogadorPeladaId, status, posicaoFila },
+    data: { partidaId, jogadorPeladaId, status, posicaoFila, convidado: !!convidado },
     include: { jogadorPelada: { include: { jogador: true } } },
   });
   res.status(201).json(presenca);
+}
+
+// Operador/Admin inclui um convidado (jogador cadastrado) numa pelada confirmada
+export async function adicionarConvidado(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const partidaId = req.params.partidaId as string;
+  const { jogadorPeladaId } = req.body;
+  if (!jogadorPeladaId) { res.status(400).json({ error: "Selecione um jogador cadastrado" }); return; }
+
+  const partida = await prisma.partida.findFirst({ where: { id: partidaId, peladaId } });
+  if (!partida) { res.status(404).json({ error: "Partida não encontrada" }); return; }
+  if (partida.status !== "CONFIRMADA") {
+    res.status(400).json({ error: "Convidados só podem ser incluídos em peladas confirmadas" }); return;
+  }
+
+  // Garante que o jogador pertence a esta pelada
+  const jp = await prisma.jogadorPelada.findFirst({ where: { id: jogadorPeladaId, peladaId } });
+  if (!jp) { res.status(404).json({ error: "Jogador não encontrado nesta pelada" }); return; }
+
+  const jaExiste = await prisma.presenca.findUnique({ where: { partidaId_jogadorPeladaId: { partidaId, jogadorPeladaId } } });
+  if (jaExiste) { res.status(409).json({ error: "Este jogador já está na pelada" }); return; }
+
+  const confirmados = await prisma.presenca.count({ where: { partidaId, status: "CONFIRMADO" } });
+  const status = confirmados < pelada.maxJogadores ? "CONFIRMADO" : "LISTA_ESPERA";
+  let posicaoFila: number | undefined;
+  if (status === "LISTA_ESPERA") {
+    const maxFila = await prisma.presenca.aggregate({ where: { partidaId, status: "LISTA_ESPERA" }, _max: { posicaoFila: true } });
+    posicaoFila = (maxFila._max.posicaoFila || 0) + 1;
+  }
+
+  const presenca = await prisma.presenca.create({
+    data: { partidaId, jogadorPeladaId, status, posicaoFila, convidado: true },
+    include: { jogadorPelada: { include: { jogador: true } } },
+  });
+  res.status(201).json(presenca);
+}
+
+// Operador/Admin remove um convidado da pelada (portal)
+export async function removerConvidado(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const partidaId = req.params.partidaId as string;
+  const presencaId = req.params.presencaId as string;
+  const presenca = await prisma.presenca.findFirst({ where: { id: presencaId, partidaId, partida: { peladaId } } });
+  if (!presenca) { res.status(404).json({ error: "Presença não encontrada" }); return; }
+
+  await prisma.presenca.delete({ where: { id: presencaId } });
+
+  if (presenca.status === "CONFIRMADO") {
+    const prox = await prisma.presenca.findFirst({ where: { partidaId, status: "LISTA_ESPERA" }, orderBy: { posicaoFila: "asc" }, include: { jogadorPelada: { include: { jogador: true } } } });
+    if (prox) {
+      await prisma.presenca.update({ where: { id: prox.id }, data: { status: "CONFIRMADO", posicaoFila: null } });
+      const fila = await prisma.presenca.findMany({ where: { partidaId, status: "LISTA_ESPERA" }, orderBy: { posicaoFila: "asc" } });
+      for (let i = 0; i < fila.length; i++) await prisma.presenca.update({ where: { id: fila[i].id }, data: { posicaoFila: i + 1 } });
+    }
+  }
+
+  res.json({ ok: true });
 }
 
 export async function removerPresenca(req: AuthRequest, res: Response) {

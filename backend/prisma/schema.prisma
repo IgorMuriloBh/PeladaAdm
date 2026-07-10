@@ -136,6 +136,7 @@ model Presenca {
   // Intenção de resenha (capturada via link de confirmação)
   interesseResenha  Boolean?
   categoriaResenha  CategoriaResenha?
+  convidado Boolean       @default(false) // presença incluída como convidado
   createdAt DateTime      @default(now())
 
   partidaId String

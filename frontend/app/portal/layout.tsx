@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { BarChart3, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, LogOut, Menu, X } from "lucide-react";
+import { BarChart3, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, UserPlus, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 // Definição de navegação por role
@@ -17,6 +17,7 @@ const NAV_JOGADOR = [
 
 const NAV_OPERADOR = [
   { href: "/portal/financeiro", label: "Financeiro", icon: DollarSign },
+  { href: "/portal/convidados", label: "Convidados", icon: UserPlus },
   { href: "/portal/gols", label: "Lançar Gols", icon: Target },
   { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
@@ -26,6 +27,7 @@ const NAV_OPERADOR = [
 const NAV_ADMINISTRADOR = [
   { href: "/portal/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/portal/peladas", label: "Peladas", icon: CalendarCheck },
+  { href: "/portal/convidados", label: "Convidados", icon: UserPlus },
   { href: "/portal/financeiro", label: "Financeiro", icon: DollarSign },
   { href: "/portal/gols", label: "Lançar Gols", icon: Target },
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
