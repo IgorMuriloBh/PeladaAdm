@@ -120,28 +120,11 @@ export default function PortalMeuFinanceiroPage() {
         ))}
       </div>
 
-      {/* Somente na aba pendentes: tabela de valores + chaves PIX */}
+      {/* Somente na aba pendentes: chaves PIX + tabela de valores */}
       {tab === "pendentes" && (
         <>
-          {/* Tabela de valores */}
-          <div className="mt-6 bg-white border border-slate-100 rounded-xl p-4">
-            <p className="text-sm font-semibold text-slate-700 mb-3">Tabela de valores</p>
-            <div className="space-y-1.5 text-sm">
-              {isMensalista ? (
-                <div className="flex justify-between"><span className="text-slate-500">Mensalidade (mensalista)</span><span className="font-medium text-slate-800">{money(dados.valores.mensalista)}</span></div>
-              ) : (
-                <div className="flex justify-between"><span className="text-slate-500">Diária (diarista)</span><span className="font-medium text-slate-800">{money(dados.valores.diarista)}</span></div>
-              )}
-              <div className="border-t border-slate-100 my-2" />
-              <p className="text-xs font-semibold text-slate-400 uppercase">Resenha</p>
-              <div className="flex justify-between"><span className="text-slate-500">Bebe 🍺</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaBebe)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Não bebe 🥤</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaNaoBebe)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Goleiro 🥅</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaGoleiro)}</span></div>
-            </div>
-          </div>
-
           {/* Chaves PIX */}
-          <div className="mt-4 bg-white border border-slate-100 rounded-xl p-4">
+          <div className="mt-6 bg-white border border-slate-100 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <QrCode className="w-4 h-4 text-green-600" />
               <p className="text-sm font-semibold text-slate-700">Pague via PIX</p>
@@ -169,6 +152,23 @@ export default function PortalMeuFinanceiroPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Tabela de valores */}
+          <div className="mt-4 bg-white border border-slate-100 rounded-xl p-4">
+            <p className="text-sm font-semibold text-slate-700 mb-3">Tabela de valores</p>
+            <div className="space-y-1.5 text-sm">
+              {isMensalista ? (
+                <div className="flex justify-between"><span className="text-slate-500">Mensalidade (mensalista)</span><span className="font-medium text-slate-800">{money(dados.valores.mensalista)}</span></div>
+              ) : (
+                <div className="flex justify-between"><span className="text-slate-500">Diária (diarista)</span><span className="font-medium text-slate-800">{money(dados.valores.diarista)}</span></div>
+              )}
+              <div className="border-t border-slate-100 my-2" />
+              <p className="text-xs font-semibold text-slate-400 uppercase">Resenha</p>
+              <div className="flex justify-between"><span className="text-slate-500">Bebe 🍺</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaBebe)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Não bebe 🥤</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaNaoBebe)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Goleiro 🥅</span><span className="font-medium text-slate-800">{money(dados.valores.resenhaGoleiro)}</span></div>
+            </div>
           </div>
 
           <p className="text-xs text-slate-400 text-center mt-4">

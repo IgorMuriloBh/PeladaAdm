@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Target } from "lucide-react";
 
 interface Stat {
   jogadorPeladaId: string;
@@ -39,20 +38,14 @@ const ORDENAR_META: Record<OrdenarPor, { sufixo: string; cor: string }> = {
 export default function PortalEstatisticasPage() {
   const { usuario } = useAuth();
   const [stats, setStats] = useState<Stat[]>([]);
-  const [artilharia, setArtilharia] = useState<{ posicao: number; nome: string; gols: number; foto: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"ranking" | "artilharia">("ranking");
   const [ordenarPor, setOrdenarPor] = useState<OrdenarPor>("pontos");
 
   useEffect(() => {
     if (!usuario) return;
-    Promise.all([
-      api.get("/portal/estatisticas"),
-      api.get("/portal/artilharia"),
-    ]).then(([s, a]) => {
-      setStats(s.data);
-      setArtilharia(a.data);
-    }).finally(() => setLoading(false));
+    api.get("/portal/estatisticas")
+      .then(s => setStats(s.data))
+      .finally(() => setLoading(false));
   }, [usuario]);
 
   const BASE = "http://localhost:3001";
@@ -66,19 +59,9 @@ export default function PortalEstatisticasPage() {
       <h1 className="text-xl font-bold text-slate-900 mb-1">Estatísticas</h1>
       <p className="text-sm text-slate-500 mb-4">{usuario?.pelada.nome}</p>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setTab("ranking")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "ranking" ? "bg-green-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>
-          Ranking
-        </button>
-        <button onClick={() => setTab("artilharia")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "artilharia" ? "bg-green-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>
-          Artilharia
-        </button>
-      </div>
-
       {loading ? (
         <div className="flex items-center justify-center py-12 text-slate-400">Carregando...</div>
-      ) : tab === "ranking" ? (
+      ) : (
         <div className="space-y-2">
           {/* Ordenação */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
@@ -112,32 +95,6 @@ export default function PortalEstatisticasPage() {
             </div>
           ))}
           {stats.length === 0 && <p className="text-center text-slate-400 py-8">Nenhum dado disponível.</p>}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {artilharia.map((a) => (
-            <div key={a.posicao} className="bg-white rounded-xl border border-slate-100 p-3 flex items-center gap-3">
-              <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${a.posicao === 1 ? "bg-yellow-400 text-white" : a.posicao === 2 ? "bg-slate-300 text-slate-700" : a.posicao === 3 ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"}`}>
-                {a.posicao}
-              </div>
-              {a.foto ? (
-                <img src={`${BASE}${a.foto}`} alt={a.nome} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="font-bold text-green-700 text-sm">{a.nome[0]}</span>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 text-sm truncate">{a.nome}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Target className="w-4 h-4 text-green-600" />
-                <span className="font-bold text-green-700 text-lg">{a.gols}</span>
-                <span className="text-xs text-slate-400 ml-0.5">gols</span>
-              </div>
-            </div>
-          ))}
-          {artilharia.length === 0 && <p className="text-center text-slate-400 py-8">Nenhum gol registrado.</p>}
         </div>
       )}
     </div>

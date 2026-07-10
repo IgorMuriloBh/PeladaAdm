@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { BarChart3, Trophy, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, QrCode, LogOut, Menu, X } from "lucide-react";
+import { BarChart3, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 // Definição de navegação por role
@@ -13,7 +13,6 @@ const NAV_JOGADOR = [
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/meu-financeiro", label: "Financeiro", icon: DollarSign },
-  { href: "/portal/pix", label: "PIX", icon: QrCode },
 ];
 
 const NAV_OPERADOR = [
@@ -22,7 +21,6 @@ const NAV_OPERADOR = [
   { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
-  { href: "/portal/pix", label: "PIX", icon: QrCode },
 ];
 
 const NAV_ADMINISTRADOR = [
@@ -33,7 +31,6 @@ const NAV_ADMINISTRADOR = [
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/portal/votacao", label: "Votação", icon: Star },
-  { href: "/portal/pix", label: "PIX", icon: QrCode },
 ];
 
 function getNav(role: string) {
@@ -102,15 +99,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const UserSection = () => (
     <div className="px-3 py-4 border-t border-slate-100">
       <div className="px-3 py-2 mb-2">
-        {pelada.logo ? (
-          <img src={`http://localhost:3001${pelada.logo}`} alt={pelada.nome} className="w-8 h-8 rounded-full object-cover mb-2" />
-        ) : (
-          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mb-2">
-            <span className="text-white text-sm">⚽</span>
-          </div>
-        )}
-        <p className="text-xs font-semibold text-slate-500 truncate">{pelada.nome}</p>
-        <p className="text-sm font-semibold text-slate-900 truncate mt-1">{usuario.nome}</p>
+        <p className="text-sm font-semibold text-slate-900 truncate">{usuario.nome}</p>
         <span className={cn("inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1", ROLE_BADGE[usuario.role])}>
           {ROLE_LABEL[usuario.role]}
         </span>
