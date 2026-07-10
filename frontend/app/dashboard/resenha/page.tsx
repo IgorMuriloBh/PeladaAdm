@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Plus, Trash2, Utensils } from "lucide-react";
+import { CheckCircle, XCircle, Plus, Trash2, Utensils, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface Jogador { id: string; nome: string; fotoNormal: string | null }
 interface JogadorPelada { id: string; posicao: string; tipo: string; jogador: Jogador }
 interface ResenhaPresenca {
-  id: string; categoria: string; valorDevido: number; pago: boolean; dataPagamento: string | null;
+  id: string; categoria: string; valorDevido: number; pago: boolean; comprovante?: string | null; dataPagamento: string | null;
   jogadorPelada: { jogador: Jogador };
 }
 interface Resenha { id: string; partidaId: string; presencas: ResenhaPresenca[] }
@@ -195,6 +195,11 @@ export default function ResenhaPage() {
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${CATEGORIAS[p.categoria]?.color}`}>
                         {CATEGORIAS[p.categoria]?.label}
                       </span>
+                      {p.comprovante && (
+                        <a href={`http://localhost:3001${p.comprovante}`} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
+                          <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
+                        </a>
+                      )}
                     </div>
                     <span className="text-sm text-slate-500">{fmtBRL(p.valorDevido)}</span>
                     <button onClick={() => togglePago(p.id, p.pago)}

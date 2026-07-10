@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, RefreshCw, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface Pagamento {
-  id: string; mes: number; ano: number; valor: number; pago: boolean; dataPagamento: string | null;
+  id: string; mes: number; ano: number; valor: number; pago: boolean; comprovante?: string | null; dataPagamento: string | null;
   jogadorPelada: { jogador: { nome: string; fotoNormal: string | null } };
 }
 interface Resumo {
@@ -77,7 +77,14 @@ export default function FinanceiroPage() {
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
         <Avatar nome={p.jogadorPelada.jogador.nome} foto={p.jogadorPelada.jogador.fotoNormal} />
-        <span className="flex-1 text-sm font-medium text-slate-800 truncate">{p.jogadorPelada.jogador.nome}</span>
+        <div className="flex-1 min-w-0">
+          <span className="block text-sm font-medium text-slate-800 truncate">{p.jogadorPelada.jogador.nome}</span>
+          {p.comprovante && (
+            <a href={`http://localhost:3001${p.comprovante}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
+              <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
+            </a>
+          )}
+        </div>
         <span className="text-sm text-slate-500">{fmtBRL(p.valor)}</span>
         <button onClick={() => togglePago(tipo, p.id, p.pago)}
           className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium transition-colors
