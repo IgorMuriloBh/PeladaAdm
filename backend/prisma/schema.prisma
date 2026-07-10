@@ -217,6 +217,7 @@ model ResenhaPresenca {
   categoria   CategoriaResenha
   valorDevido Float
   pago        Boolean         @default(false)
+  comprovante String?
   dataPagamento DateTime?
   createdAt   DateTime        @default(now())
 
@@ -236,6 +237,7 @@ model Pagamento {
   ano           Int?
   valor         Float
   pago          Boolean      @default(false)
+  comprovante   String?
   dataPagamento DateTime?
   createdAt     DateTime     @default(now())
 

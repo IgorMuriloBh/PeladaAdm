@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { CheckCircle2, Circle, Utensils, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Utensils, Plus, Trash2, FileCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-interface Pagamento { id: string; mes: number | null; ano: number | null; valor: number; pago: boolean; jogadorPelada: { jogador: { nome: string } } }
-interface ResenhaPresenca { id: string; categoria: string; valorDevido: number; pago: boolean; jogadorPelada: { id: string; jogador: { nome: string } } }
+const BASE = "http://localhost:3001";
+interface Pagamento { id: string; mes: number | null; ano: number | null; valor: number; pago: boolean; comprovante?: string | null; jogadorPelada: { jogador: { nome: string } } }
+interface ResenhaPresenca { id: string; categoria: string; valorDevido: number; pago: boolean; comprovante?: string | null; jogadorPelada: { id: string; jogador: { nome: string } } }
 interface Resenha { id: string; presencas: ResenhaPresenca[] }
 interface Partida { id: string; data: string; status: string; presencas?: { jogadorPelada: { id: string; jogador: { nome: string } } }[] }
 
@@ -160,6 +161,11 @@ export default function PortalFinanceiroPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 text-sm truncate">{p.jogadorPelada.jogador.nome}</p>
                   <p className="text-xs text-slate-400">R$ {p.valor.toFixed(2)}</p>
+                  {p.comprovante && (
+                    <a href={`${BASE}${p.comprovante}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline mt-0.5">
+                      <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
+                    </a>
+                  )}
                 </div>
                 <button
                   onClick={() => marcarPagamento(p.id, tab === "mensalidades" ? "mensalidade" : "diaria", !p.pago)}
@@ -205,6 +211,11 @@ export default function PortalFinanceiroPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-slate-800 text-sm truncate">{rp.jogadorPelada.jogador.nome}</p>
                           <p className="text-xs text-slate-400">{CAT_LABEL[rp.categoria]} · R$ {rp.valorDevido.toFixed(2)}</p>
+                          {rp.comprovante && (
+                            <a href={`${BASE}${rp.comprovante}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline mt-0.5">
+                              <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
+                            </a>
+                          )}
                         </div>
                         <button
                           onClick={() => marcarResenha(rp.id, !rp.pago)}

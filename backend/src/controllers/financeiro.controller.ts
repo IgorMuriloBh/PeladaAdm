@@ -340,19 +340,23 @@ export async function meuFinanceiro(req: AuthRequest, res: Response) {
   const mm = (m: number | null) => String(m ?? 0).padStart(2, "0");
   const itensPagamento = pagamentos.map(p => ({
     id: p.id,
+    origem: "pagamento" as const,
     tipo: p.tipo, // MENSALIDADE | DIARIA
     descricao: `${p.tipo === "MENSALIDADE" ? "Mensalidade" : "Diária"} ${mm(p.mes)}/${p.ano ?? ""}`,
     valor: p.valor,
     pago: p.pago,
+    comprovante: p.comprovante,
     dataPagamento: p.dataPagamento,
   }));
   const itensResenha = resenhas.map(r => ({
     id: r.id,
+    origem: "resenha" as const,
     tipo: "RESENHA" as const,
     descricao: `Resenha ${new Date(r.resenha.partida.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}`,
     categoria: CAT_RESENHA_LABEL[r.categoria] || r.categoria,
     valor: r.valorDevido,
     pago: r.pago,
+    comprovante: r.comprovante,
     dataPagamento: r.dataPagamento,
   }));
 
@@ -370,4 +374,34 @@ export async function meuFinanceiro(req: AuthRequest, res: Response) {
     pendentes: itens.filter(i => !i.pago),
     realizados: itens.filter(i => i.pago),
   });
+}
+
+// Jogador anexa comprovante de pagamento a uma pendência (pagamento ou resenha)
+export async function anexarComprovante(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+  const jpId = req.jogadorPeladaId;
+  if (!jpId) { res.status(400).json({ error: "Seu usuário não está vinculado a um jogador" }); return; }
+
+  const origem = req.params.origem as string; // "pagamento" | "resenha"
+  const id = req.params.id as string;
+  if (!(req as any).file) { res.status(400).json({ error: "Envie o arquivo do comprovante" }); return; }
+  const comprovante = `/uploads/${(req as any).file.filename}`;
+
+  if (origem === "pagamento") {
+    const pag = await prisma.pagamento.findFirst({ where: { id, jogadorPeladaId: jpId } });
+    if (!pag) { res.status(404).json({ error: "Pagamento não encontrado" }); return; }
+    if (pag.pago) { res.status(400).json({ error: "Este pagamento já foi confirmado" }); return; }
+    const upd = await prisma.pagamento.update({ where: { id }, data: { comprovante } });
+    res.json({ ok: true, comprovante: upd.comprovante });
+  } else if (origem === "resenha") {
+    const rp = await prisma.resenhaPresenca.findFirst({ where: { id, jogadorPeladaId: jpId } });
+    if (!rp) { res.status(404).json({ error: "Resenha não encontrada" }); return; }
+    if (rp.pago) { res.status(400).json({ error: "Este pagamento já foi confirmado" }); return; }
+    const upd = await prisma.resenhaPresenca.update({ where: { id }, data: { comprovante } });
+    res.json({ ok: true, comprovante: upd.comprovante });
+  } else {
+    res.status(400).json({ error: "Origem inválida" });
+  }
 }

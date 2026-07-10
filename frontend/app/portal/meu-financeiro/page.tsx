@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Copy, Check, Loader2, QrCode, Bell } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Check, Loader2, QrCode, Bell, Paperclip, FileCheck } from "lucide-react";
 
 interface Item {
-  id: string; tipo: string; descricao: string; categoria?: string;
-  valor: number; pago: boolean; dataPagamento: string | null;
+  id: string; origem: "pagamento" | "resenha"; tipo: string; descricao: string; categoria?: string;
+  valor: number; pago: boolean; comprovante: string | null; dataPagamento: string | null;
 }
 interface Financeiro {
   tipo: string; // MENSALISTA | DIARISTA
@@ -33,6 +33,9 @@ export default function PortalMeuFinanceiroPage() {
   const [chaves, setChaves] = useState<ChavePix[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [enviandoId, setEnviandoId] = useState<string | null>(null);
+
+  const carregar = () => api.get("/portal/meu-financeiro").then(f => setDados(f.data));
 
   useEffect(() => {
     if (!usuario) return;
@@ -43,6 +46,19 @@ export default function PortalMeuFinanceiroPage() {
       .catch(() => setDados(null))
       .finally(() => setLoading(false));
   }, [usuario]);
+
+  async function anexarComprovante(item: Item, file: File) {
+    setEnviandoId(item.id);
+    try {
+      const fd = new FormData();
+      fd.append("comprovante", file);
+      await api.post(`/portal/meu-financeiro/${item.origem}/${item.id}/comprovante`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      await carregar();
+      toast.success("Comprovante anexado! Aguarde a confirmação do operador.");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || "Erro ao anexar comprovante");
+    } finally { setEnviandoId(null); }
+  }
 
   async function copiar(c: ChavePix) {
     if (!c.valor) return;
@@ -108,22 +124,45 @@ export default function PortalMeuFinanceiroPage() {
             )}
           </div>
         ) : lista.map(item => (
-          <div key={item.id} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TIPO_BADGE[item.tipo]}`}>{TIPO_LABEL[item.tipo]}</span>
-                <p className="font-medium text-slate-800 text-sm truncate">{item.descricao}</p>
+          <div key={item.id} className="bg-white border border-slate-100 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TIPO_BADGE[item.tipo]}`}>{TIPO_LABEL[item.tipo]}</span>
+                  <p className="font-medium text-slate-800 text-sm truncate">{item.descricao}</p>
+                </div>
+                <p className="text-xs text-slate-400">
+                  {item.categoria ? `${item.categoria} · ` : ""}{money(item.valor)}
+                  {item.pago && item.dataPagamento ? ` · pago em ${new Date(item.dataPagamento).toLocaleDateString("pt-BR")}` : ""}
+                </p>
               </div>
-              <p className="text-xs text-slate-400">
-                {item.categoria ? `${item.categoria} · ` : ""}{money(item.valor)}
-                {item.pago && item.dataPagamento ? ` · pago em ${new Date(item.dataPagamento).toLocaleDateString("pt-BR")}` : ""}
-              </p>
+              {item.pago ? (
+                <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Pago</span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-lg"><Clock className="w-3.5 h-3.5" /> Pendente</span>
+              )}
             </div>
-            {item.pago ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Pago</span>
-            ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-lg"><Clock className="w-3.5 h-3.5" /> Pendente</span>
-            )}
+
+            {/* Comprovante */}
+            <div className="mt-2.5 pt-2.5 border-t border-slate-50 flex items-center gap-3">
+              {item.comprovante ? (
+                <a href={`${BASE}${item.comprovante}`} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline">
+                  <FileCheck className="w-3.5 h-3.5" /> Comprovante anexado (ver)
+                </a>
+              ) : (
+                <span className="text-xs text-slate-400">Sem comprovante</span>
+              )}
+              {!item.pago && (
+                <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-green-700 cursor-pointer hover:underline">
+                  {enviandoId === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+                  {item.comprovante ? "Trocar comprovante" : "Anexar comprovante"}
+                  <input type="file" accept="image/*,application/pdf" className="hidden"
+                    disabled={enviandoId === item.id}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) anexarComprovante(item, f); e.target.value = ""; }} />
+                </label>
+              )}
+            </div>
           </div>
         ))}
       </div>
