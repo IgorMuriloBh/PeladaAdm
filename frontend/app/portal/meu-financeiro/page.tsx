@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, Copy, Check, Loader2, QrCode } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Check, Loader2, QrCode, Bell } from "lucide-react";
 
 interface Item {
   id: string; tipo: string; descricao: string; categoria?: string;
@@ -88,6 +88,14 @@ export default function PortalMeuFinanceiroPage() {
           </button>
         ))}
       </div>
+
+      {/* Notificação de pendências */}
+      {tab === "pendentes" && dados.pendentes.length > 0 && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-3 text-sm text-amber-800">
+          <Bell className="w-4 h-4 shrink-0" />
+          <span>Você tem <strong>{dados.pendentes.length}</strong> pagamento(s) pendente(s). Regularize via PIX abaixo.</span>
+        </div>
+      )}
 
       {/* Lista de pagamentos */}
       <div className="space-y-2">

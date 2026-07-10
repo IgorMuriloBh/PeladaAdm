@@ -5,6 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import router from "./routes";
+import { iniciarScheduler } from "./lib/scheduler";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,4 +26,5 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 app.listen(PORT, () => {
   console.log(`Backend rodando em http://localhost:${PORT}`);
+  iniciarScheduler();
 });

@@ -27,14 +27,12 @@ export async function listarMensalidades(req: AuthRequest, res: Response) {
   res.json(pagamentos);
 }
 
-export async function gerarMensalidades(req: AuthRequest, res: Response) {
-  const pelada = await resolvePelada(req, true);
-  const peladaId = getPeladaId(req);
-  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
-
-  const mes = Number(req.body.mes) || new Date().getMonth() + 1;
-  const ano = Number(req.body.ano) || new Date().getFullYear();
-  const valor = (pelada as any).configuracaoFinanceira?.mensalistaValor || 90;
+// Gera (idempotente) as mensalidades a pagar dos mensalistas ativos de uma
+// pelada para o mês/ano informado. Reutilizada pelo endpoint manual e pela
+// geração automática mensal (scheduler).
+export async function gerarMensalidadesMes(peladaId: string, mes: number, ano: number) {
+  const cfg = await prisma.configuracaoFinanceira.findUnique({ where: { peladaId } });
+  const valor = cfg?.mensalistaValor ?? 90;
 
   const mensalistas = await prisma.jogadorPelada.findMany({
     where: { peladaId, tipo: "MENSALISTA", ativo: true },
@@ -50,6 +48,18 @@ export async function gerarMensalidades(req: AuthRequest, res: Response) {
       criados++;
     }
   }
+  return criados;
+}
+
+export async function gerarMensalidades(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const mes = Number(req.body.mes) || new Date().getMonth() + 1;
+  const ano = Number(req.body.ano) || new Date().getFullYear();
+
+  const criados = await gerarMensalidadesMes(peladaId, mes, ano);
   res.json({ criados, mes, ano });
 }
 
