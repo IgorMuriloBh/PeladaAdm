@@ -16,6 +16,8 @@ RUN npm run build
 
 FROM base AS runtime
 ENV NODE_ENV=production
+# Next standalone precisa escutar em 0.0.0.0 para o Railway/Docker alcançar
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 # Artefatos do output standalone
 COPY --from=build /app/public ./public
