@@ -1,7 +1,8 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ArrowRight, BookOpen, HelpCircle } from "lucide-react";
+import { Search, ArrowRight, BookOpen, HelpCircle, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { TOPICOS, buscar, resolverRota, MANUAL_VERSAO, type Contexto } from "@/lib/manual";
 
 // Sugestões rápidas de busca (chips)
@@ -10,15 +11,89 @@ const SUGESTOES = ["pagar", "pix", "confirmar presença", "resenha", "votar", "c
 export function Manual({ contexto, papel }: { contexto: Contexto; papel?: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
+  const [gerandoPdf, setGerandoPdf] = useState(false);
   const resultados = useMemo(() => buscar(q), [q]);
   const buscando = q.trim().length > 0;
+
+  async function baixarPdf() {
+    setGerandoPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 48;
+      const maxW = pageW - margin * 2;
+      let y = margin;
+
+      const quebra = (altura: number) => {
+        if (y + altura > pageH - margin) { doc.addPage(); y = margin; }
+      };
+      const escreve = (texto: string, size: number, style: "normal" | "bold" | "italic", cor: [number, number, number], espacoDepois = 4) => {
+        doc.setFont("helvetica", style);
+        doc.setFontSize(size);
+        doc.setTextColor(cor[0], cor[1], cor[2]);
+        const linhas = doc.splitTextToSize(texto, maxW) as string[];
+        for (const linha of linhas) {
+          quebra(size + 4);
+          doc.text(linha, margin, y);
+          y += size + 4;
+        }
+        y += espacoDepois;
+      };
+
+      // Capa / cabeçalho
+      doc.setFillColor(17, 17, 17);
+      doc.roundedRect(margin, y, 34, 34, 6, 6, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(233, 179, 0);
+      doc.text("ADM", margin + 17, y + 22, { align: "center" });
+      doc.setTextColor(20, 20, 20); doc.setFontSize(20);
+      doc.text("Manual do Pelada ADM", margin + 46, y + 16);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(110, 110, 100);
+      doc.text(`Guia de uso e regras · v${MANUAL_VERSAO}`, margin + 46, y + 32);
+      y += 34 + 22;
+
+      // Tópicos
+      for (const t of TOPICOS) {
+        quebra(40);
+        escreve(t.titulo, 13.5, "bold", [18, 130, 76], 2);
+        escreve(t.resumo, 10.5, "italic", [110, 110, 100], 4);
+        for (const linha of t.corpo) {
+          escreve("•  " + linha, 10.5, "normal", [40, 40, 40], 2);
+        }
+        y += 8;
+      }
+
+      // Rodapé com numeração
+      const total = doc.getNumberOfPages();
+      for (let i = 1; i <= total; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(150, 150, 140);
+        doc.text(`Pelada ADM · Manual v${MANUAL_VERSAO}`, margin, pageH - 24);
+        doc.text(`${i} / ${total}`, pageW - margin, pageH - 24, { align: "right" });
+      }
+
+      doc.save(`Manual-Pelada-ADM-v${MANUAL_VERSAO}.pdf`);
+    } catch {
+      toast.error("Não foi possível gerar o PDF");
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
       {/* Cabeçalho */}
-      <div className="flex items-center gap-2 mb-1">
-        <BookOpen className="w-5 h-5 text-green-600" />
-        <h1 className="text-xl font-bold text-slate-900">Ajuda & Manual</h1>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-green-600" />
+          <h1 className="text-xl font-bold text-slate-900">Ajuda & Manual</h1>
+        </div>
+        <button onClick={baixarPdf} disabled={gerandoPdf}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:border-green-300 hover:text-green-700 disabled:opacity-60 transition-colors">
+          {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          {gerandoPdf ? "Gerando..." : "Baixar PDF"}
+        </button>
       </div>
       <p className="text-sm text-slate-500 mb-4">Pesquise um tema e vá direto para a função no sistema.</p>
 
