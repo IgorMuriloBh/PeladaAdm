@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { Menu, X, LayoutDashboard, Users, CalendarDays, DollarSign, BarChart3, Star, Settings, LogOut, Utensils, Tv2, ImagePlay, UserCog } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, CalendarDays, DollarSign, BarChart3, Star, Settings, LogOut, Utensils, Tv2, ImagePlay, UserCog, HelpCircle } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -18,6 +18,7 @@ const nav = [
   { href: "/dashboard/destaques", label: "Destaques", icon: Star },
   { href: "/dashboard/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
+  { href: "/dashboard/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 export function MobileNav() {

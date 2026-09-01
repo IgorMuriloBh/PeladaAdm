@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { BarChart3, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, UserPlus, LogOut, Menu, X } from "lucide-react";
+import { BarChart3, Star, DollarSign, Target, ImagePlay, CalendarDays, CalendarCheck, UserPlus, HelpCircle, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 // Definição de navegação por role
@@ -13,6 +13,7 @@ const NAV_JOGADOR = [
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/meu-financeiro", label: "Financeiro", icon: DollarSign },
+  { href: "/portal/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 const NAV_OPERADOR = [
@@ -22,6 +23,7 @@ const NAV_OPERADOR = [
   { href: "/portal/votacao", label: "Votação", icon: Star },
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
+  { href: "/portal/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 const NAV_ADMINISTRADOR = [
@@ -33,6 +35,7 @@ const NAV_ADMINISTRADOR = [
   { href: "/portal/arte", label: "Arte Instagram", icon: ImagePlay },
   { href: "/portal/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { href: "/portal/votacao", label: "Votação", icon: Star },
+  { href: "/portal/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 function getNav(role: string) {
