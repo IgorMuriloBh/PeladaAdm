@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { Plus, Minus, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -68,7 +68,7 @@ export default function PortalGolsPage() {
     .sort((a, b) => a.jogadorPelada.jogador.nome.localeCompare(b.jogadorPelada.jogador.nome, "pt-BR"));
 
   const showSearch = presencas.length > 8;
-  const BASE = "http://localhost:3001";
+  const BASE = ASSET_BASE;
 
   function formatData(d: string) {
     return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });

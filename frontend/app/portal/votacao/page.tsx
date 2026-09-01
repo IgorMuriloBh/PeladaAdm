@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { Star, Droplets, ChevronDown, ChevronUp, Check, RotateCcw, Lock } from "lucide-react";
 
@@ -17,7 +17,7 @@ interface Resultado {
   votos: VotoGestao[];
 }
 
-const BASE = "http://localhost:3001";
+const BASE = ASSET_BASE;
 
 export default function PortalVotacaoPage() {
   const { usuario } = useAuth();

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { UserPlus, Trash2, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +11,7 @@ interface Presenca { id: string; status: string; convidado?: boolean; jogadorPel
 interface Partida { id: string; data: string; status: string; presencas?: Presenca[] }
 interface JogadorPelada { id: string; posicao: string; tipo: string; jogador: { nome: string } }
 
-const BASE = "http://localhost:3001";
+const BASE = ASSET_BASE;
 
 export default function PortalConvidadosPage() {
   const { usuario } = useAuth();

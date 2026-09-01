@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 
 interface Stat {
   jogadorPeladaId: string;
@@ -48,7 +48,7 @@ export default function PortalEstatisticasPage() {
       .finally(() => setLoading(false));
   }, [usuario]);
 
-  const BASE = "http://localhost:3001";
+  const BASE = ASSET_BASE;
 
   const statsOrdenados = [...stats].sort(
     (a, b) => b[ordenarPor] - a[ordenarPor] || b.pontos - a.pontos || b.gols - a.gols

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, Copy, Check, Loader2, QrCode, Bell, Paperclip, FileCheck } from "lucide-react";
 
@@ -17,7 +17,7 @@ interface Financeiro {
 }
 interface ChavePix { id: string; tipo: string; valor: string | null; imagem: string | null; descricao: string | null }
 
-const BASE = "http://localhost:3001";
+const BASE = ASSET_BASE;
 const PIX_LABEL: Record<string, string> = { TELEFONE: "Telefone", CPF_CNPJ: "CPF/CNPJ", EMAIL: "E-mail", ALEATORIA: "Chave aleatória", QRCODE: "QR Code" };
 const TIPO_BADGE: Record<string, string> = {
   MENSALIDADE: "bg-purple-100 text-purple-700",

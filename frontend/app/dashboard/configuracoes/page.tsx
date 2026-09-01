@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -471,7 +471,7 @@ export default function ConfiguracoesPage() {
                   {chavesPix.map(c => (
                     <div key={c.id} className="flex items-center gap-3 border border-slate-100 rounded-xl p-3">
                       {c.tipo === "QRCODE" && c.imagem ? (
-                        <img src={`http://localhost:3001${c.imagem}`} alt="QR Code" className="w-12 h-12 rounded object-cover border border-slate-100" />
+                        <img src={`${ASSET_BASE}${c.imagem}`} alt="QR Code" className="w-12 h-12 rounded object-cover border border-slate-100" />
                       ) : (
                         <div className="w-12 h-12 rounded bg-green-50 flex items-center justify-center flex-shrink-0">
                           <QrCode className="w-5 h-5 text-green-600" />

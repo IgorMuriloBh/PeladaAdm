@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ export default function EstatisticasPage() {
   const maxPontos = statsOrdenados[0]?.[ordenarPor] || 1;
 
   function Avatar({ nome, foto }: { nome: string; foto: string | null }) {
-    if (foto) return <img src={`http://localhost:3001${foto}`} alt={nome} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />;
+    if (foto) return <img src={`${ASSET_BASE}${foto}`} alt={nome} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />;
     return <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold flex-shrink-0">{nome[0].toUpperCase()}</div>;
   }
 

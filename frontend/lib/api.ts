@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+
+// Origem do backend (sem o /api) — usada para montar URLs de uploads/imagens
+export const ASSET_BASE = API_URL.replace(/\/api\/?$/, "");
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+  baseURL: API_URL,
 });
 
 api.interceptors.request.use((config) => {

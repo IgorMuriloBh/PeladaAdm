@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -156,7 +156,7 @@ export default function PartidaPage() {
 
   function Avatar({ nome, foto, size = "sm" }: { nome: string; foto: string | null; size?: "sm" | "md" }) {
     const cls = size === "md" ? "w-10 h-10 text-base" : "w-8 h-8 text-sm";
-    if (foto) return <img src={`http://localhost:3001${foto}`} alt={nome} className={`${cls} rounded-full object-cover flex-shrink-0`} />;
+    if (foto) return <img src={`${ASSET_BASE}${foto}`} alt={nome} className={`${cls} rounded-full object-cover flex-shrink-0`} />;
     return <div className={`${cls} rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 text-green-700 font-bold`}>{nome[0].toUpperCase()}</div>;
   }
 

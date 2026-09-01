@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export default function FinanceiroPage() {
   }
 
   function Avatar({ nome, foto }: { nome: string; foto: string | null }) {
-    if (foto) return <img src={`http://localhost:3001${foto}`} alt={nome} className="w-8 h-8 rounded-full object-cover" />;
+    if (foto) return <img src={`${ASSET_BASE}${foto}`} alt={nome} className="w-8 h-8 rounded-full object-cover" />;
     return <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">{nome[0].toUpperCase()}</div>;
   }
 
@@ -80,7 +80,7 @@ export default function FinanceiroPage() {
         <div className="flex-1 min-w-0">
           <span className="block text-sm font-medium text-slate-800 truncate">{p.jogadorPelada.jogador.nome}</span>
           {p.comprovante && (
-            <a href={`http://localhost:3001${p.comprovante}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
+            <a href={`${ASSET_BASE}${p.comprovante}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
               <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
             </a>
           )}

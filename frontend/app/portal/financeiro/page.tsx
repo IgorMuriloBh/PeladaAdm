@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { CheckCircle2, Circle, Utensils, Plus, Trash2, FileCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const BASE = "http://localhost:3001";
+const BASE = ASSET_BASE;
 interface Pagamento { id: string; mes: number | null; ano: number | null; valor: number; pago: boolean; comprovante?: string | null; jogadorPelada: { jogador: { nome: string } } }
 interface ResenhaPresenca { id: string; categoria: string; valorDevido: number; pago: boolean; comprovante?: string | null; jogadorPelada: { id: string; jogador: { nome: string } } }
 interface Resenha { id: string; presencas: ResenhaPresenca[] }

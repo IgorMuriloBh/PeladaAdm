@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -92,7 +92,7 @@ export default function ArtePage() {
         {voto ? (
           <>
             {voto.jogadorPelada.jogador.fotoNormal ? (
-              <img src={`http://localhost:3001${voto.jogadorPelada.jogador.fotoNormal}`} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white/60 mb-3 shadow-xl" crossOrigin="anonymous" />
+              <img src={`${ASSET_BASE}${voto.jogadorPelada.jogador.fotoNormal}`} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-white/60 mb-3 shadow-xl" crossOrigin="anonymous" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-white/20 border-4 border-white/60 flex items-center justify-center mb-3 shadow-xl">
                 <span className="text-4xl font-bold text-white">{voto.jogadorPelada.jogador.nome[0]}</span>
@@ -128,7 +128,7 @@ export default function ArtePage() {
             <div key={a.posicao} className="flex items-center gap-3 bg-white/15 rounded-xl px-4 py-2.5">
               <span className="text-xl w-7 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i+1}º`}</span>
               {a.foto ? (
-                <img src={`http://localhost:3001${a.foto}`} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-white/50" crossOrigin="anonymous" />
+                <img src={`${ASSET_BASE}${a.foto}`} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-white/50" crossOrigin="anonymous" />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-white/20 border-2 border-white/50 flex items-center justify-center">
                   <span className="text-sm font-bold text-white">{a.nome[0]}</span>

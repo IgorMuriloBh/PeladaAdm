@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Download, Star, Droplets, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 interface VotacaoItem { tipo: string; jogadorPelada: { jogador: { nome: string; fotoNormal: string | null; fotoFeliz: string | null; fotoTriste: string | null } } }
 interface ArtilhariaItem { posicao: number; nome: string; gols: number; foto: string | null }
 
-const BASE = "http://localhost:3001";
+const BASE = ASSET_BASE;
 
 export default function PortalArtePage() {
   const { usuario } = useAuth();

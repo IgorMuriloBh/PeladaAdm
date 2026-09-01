@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -196,7 +196,7 @@ export default function ResenhaPage() {
                         {CATEGORIAS[p.categoria]?.label}
                       </span>
                       {p.comprovante && (
-                        <a href={`http://localhost:3001${p.comprovante}`} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
+                        <a href={`${ASSET_BASE}${p.comprovante}`} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
                           <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
                         </a>
                       )}

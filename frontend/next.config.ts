@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Gera um build enxuto e autossuficiente para rodar em container Docker
+  output: "standalone",
 };
 
 export default nextConfig;

@@ -1,0 +1,58 @@
+# Stack completa: Postgres + Backend (Express/Prisma) + Frontend (Next.js)
+# Uso local:   docker compose up --build
+# Produção/VPS: defina as variáveis no arquivo .env (ao lado deste arquivo)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-pelada_adm}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pelada_adm}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-troque-esta-chave-em-producao}
+      NODE_ENV: production
+      PORT: 3001
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      UPLOAD_DIR: uploads
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Embutida no bundle do cliente no build. Em produção use a URL pública do backend.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  pgdata:
+  uploads:

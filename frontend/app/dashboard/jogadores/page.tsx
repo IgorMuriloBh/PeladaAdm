@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ export default function JogadoresPage() {
 
   function Avatar({ jp }: { jp: JogadorPelada }) {
     if (jp.jogador.fotoNormal)
-      return <img src={`http://localhost:3001${jp.jogador.fotoNormal}`} alt={jp.jogador.nome} className="w-11 h-11 rounded-full object-cover" />;
+      return <img src={`${ASSET_BASE}${jp.jogador.fotoNormal}`} alt={jp.jogador.nome} className="w-11 h-11 rounded-full object-cover" />;
     return (
       <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">
         {jp.jogador.nome[0].toUpperCase()}
@@ -123,7 +123,7 @@ export default function JogadoresPage() {
                   <div className="space-y-1.5">
                     <Label>Foto de rosto (opcional)</Label>
                     {editando?.jogador.fotoNormal && !foto && (
-                      <img src={`http://localhost:3001${editando.jogador.fotoNormal}`} alt="" className="w-14 h-14 rounded-full object-cover mb-1" />
+                      <img src={`${ASSET_BASE}${editando.jogador.fotoNormal}`} alt="" className="w-14 h-14 rounded-full object-cover mb-1" />
                     )}
                     <input type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] || null)}
                       className="w-full text-sm text-slate-600 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:text-xs file:font-semibold file:cursor-pointer border border-slate-200 rounded-lg p-1.5 bg-white" />
