@@ -34,8 +34,9 @@ export async function gerarMensalidadesMes(peladaId: string, mes: number, ano: n
   const cfg = await prisma.configuracaoFinanceira.findUnique({ where: { peladaId } });
   const valor = cfg?.mensalistaValor ?? 90;
 
+  // Goleiro não paga mensalidade — excluído da geração.
   const mensalistas = await prisma.jogadorPelada.findMany({
-    where: { peladaId, tipo: "MENSALISTA", ativo: true },
+    where: { peladaId, tipo: "MENSALISTA", ativo: true, posicao: { not: "GOLEIRO" } },
   });
 
   let criados = 0;

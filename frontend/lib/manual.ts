@@ -82,6 +82,7 @@ export const TOPICOS: Topico[] = [
       "Jogador: veja suas pendências e pagamentos realizados no menu Financeiro; você pode anexar um comprovante (opcional).",
       "Operador/Administrador: confere o comprovante e marca como pago (pode confirmar com ou sem anexo).",
       "A mensalidade dos mensalistas é gerada automaticamente todo mês. A diária e a resenha conforme a participação.",
+      "Goleiros não pagam mensalidade — não é gerada cobrança de mensalidade para quem é goleiro, mesmo confirmando presença.",
       "Ao confirmar o pagamento, a pendência sai de Pendentes e vai para Realizados.",
     ],
     palavras: "financeiro pagar pagamento mensalidade diaria pendencia debito divida boleto conta valores comprovante",
