@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, AlertTriangle, RefreshCw, FileCheck } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, RefreshCw, FileCheck, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 interface Pagamento {
@@ -34,6 +35,14 @@ export default function FinanceiroPage() {
   const [mensalidades, setMensalidades] = useState<Pagamento[]>([]);
   const [diarias, setDiarias] = useState<Pagamento[]>([]);
   const [inadimplentes, setInadimplentes] = useState<Pagamento[]>([]);
+  const [busca, setBusca] = useState("");
+
+  // Ordena sempre por nome (alfabético) e filtra pela busca (sem acento/caixa)
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const filtrar = (arr: Pagamento[]) =>
+    arr
+      .filter(p => norm(p.jogadorPelada.jogador.nome).includes(norm(busca.trim())))
+      .sort((a, b) => a.jogadorPelada.jogador.nome.localeCompare(b.jogadorPelada.jogador.nome, "pt-BR"));
 
   useEffect(() => {
     api.get("/peladas").then(r => { setPeladas(r.data); if (r.data.length) setPeladaId(r.data[0].id); });
@@ -156,6 +165,12 @@ export default function FinanceiroPage() {
         </div>
       )}
 
+      {/* Busca por jogador */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        <Input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar jogador..." className="pl-9 bg-white" />
+      </div>
+
       <Tabs defaultValue="mensalidades">
         <TabsList className="bg-slate-100">
           <TabsTrigger value="mensalidades">Mensalidades</TabsTrigger>
@@ -181,8 +196,10 @@ export default function FinanceiroPage() {
             <CardContent>
               {mensalidades.length === 0 ? (
                 <p className="text-sm text-slate-400 italic py-4 text-center">Nenhuma mensalidade. Clique em "Gerar" para criar.</p>
+              ) : filtrar(mensalidades).length === 0 ? (
+                <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum jogador encontrado para "{busca}".</p>
               ) : (
-                mensalidades.map(p => <PagamentoRow key={p.id} p={p} tipo="mensalidade" />)
+                filtrar(mensalidades).map(p => <PagamentoRow key={p.id} p={p} tipo="mensalidade" />)
               )}
             </CardContent>
           </Card>
@@ -198,8 +215,10 @@ export default function FinanceiroPage() {
                 <p className="text-sm text-slate-400 italic py-4 text-center">
                   Nenhuma diária registrada. As diárias são geradas na página de cada partida.
                 </p>
+              ) : filtrar(diarias).length === 0 ? (
+                <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum jogador encontrado para "{busca}".</p>
               ) : (
-                diarias.map(p => <PagamentoRow key={p.id} p={p} tipo="diaria" />)
+                filtrar(diarias).map(p => <PagamentoRow key={p.id} p={p} tipo="diaria" />)
               )}
             </CardContent>
           </Card>
@@ -216,8 +235,10 @@ export default function FinanceiroPage() {
             <CardContent>
               {inadimplentes.length === 0 ? (
                 <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum inadimplente neste período. 🎉</p>
+              ) : filtrar(inadimplentes).length === 0 ? (
+                <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum jogador encontrado para "{busca}".</p>
               ) : (
-                inadimplentes.map(p => (
+                filtrar(inadimplentes).map(p => (
                   <div key={p.id} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
                     <Avatar nome={p.jogadorPelada.jogador.nome} foto={p.jogadorPelada.jogador.fotoNormal} />
                     <span className="flex-1 text-sm font-medium text-slate-800 truncate">{p.jogadorPelada.jogador.nome}</span>
