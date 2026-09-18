@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { toast } from "sonner";
 import { ArrowLeft, UserCheck, Clock, Users, Bell, Trash2, DollarSign, Search, Shuffle } from "lucide-react";
 
@@ -352,16 +353,17 @@ export default function PartidaPage() {
         <CardContent className="p-4">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Confirmar presença</h3>
           <div className="flex gap-2">
-            <Select value={jogadorSelecionado} onValueChange={setJogadorSelecionado}>
-              <SelectTrigger className="flex-1"><SelectValue placeholder="Selecionar jogador..." /></SelectTrigger>
-              <SelectContent>
-                {jogadoresDisponiveis.map(j => (
-                  <SelectItem key={j.id} value={j.id}>
-                    {j.jogador.nome} {j.posicao === "GOLEIRO" ? "🥅" : ""} ({j.tipo === "MENSALISTA" ? "Mensalista" : "Diarista"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ComboBusca
+              className="flex-1"
+              value={jogadorSelecionado}
+              onChange={setJogadorSelecionado}
+              placeholder="Selecionar jogador..."
+              buscaPlaceholder="Buscar jogador..."
+              options={jogadoresDisponiveis.map(j => ({
+                value: j.id,
+                label: `${j.jogador.nome}${j.posicao === "GOLEIRO" ? " 🥅" : ""} (${j.tipo === "MENSALISTA" ? "Mensalista" : "Diarista"})`,
+              }))}
+            />
             <Button className="bg-green-600 hover:bg-green-700 px-5" onClick={confirmar}>
               <UserCheck className="w-4 h-4" />
             </Button>

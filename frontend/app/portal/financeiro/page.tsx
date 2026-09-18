@@ -5,6 +5,7 @@ import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { CheckCircle2, Circle, Utensils, Plus, Trash2, FileCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -254,14 +255,13 @@ export default function PortalFinanceiroPage() {
           <div className="space-y-3 mt-2">
             <div className="space-y-1">
               <p className="text-xs font-medium text-slate-600">Jogador</p>
-              <Select value={addJpId} onValueChange={setAddJpId}>
-                <SelectTrigger className="bg-white"><SelectValue placeholder="Selecione o jogador" /></SelectTrigger>
-                <SelectContent>
-                  {jogadoresDisponiveis.map(pr => (
-                    <SelectItem key={pr.jogadorPelada.id} value={pr.jogadorPelada.id}>{pr.jogadorPelada.jogador.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ComboBusca
+                value={addJpId}
+                onChange={setAddJpId}
+                placeholder="Selecione o jogador"
+                buscaPlaceholder="Buscar jogador..."
+                options={jogadoresDisponiveis.map(pr => ({ value: pr.jogadorPelada.id, label: pr.jogadorPelada.jogador.nome }))}
+              />
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-slate-600">Categoria</p>

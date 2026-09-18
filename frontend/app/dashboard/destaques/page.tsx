@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api, ASSET_BASE } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -158,12 +159,14 @@ export default function DestaquesPage() {
                 <p className="text-sm text-slate-400 italic">Nenhum destaque atribuído</p>
               )}
               <div className="flex gap-2">
-                <Select value={destaqueSel} onValueChange={setDestaqueSel}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Escolher jogador..." /></SelectTrigger>
-                  <SelectContent>
-                    {jogadoresAtivos.map(j => <SelectItem key={j.jogador.id} value={j.jogador.id}>{j.jogador.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <ComboBusca
+                  className="flex-1"
+                  value={destaqueSel}
+                  onChange={setDestaqueSel}
+                  placeholder="Escolher jogador..."
+                  buscaPlaceholder="Buscar jogador..."
+                  options={jogadoresAtivos.map(j => ({ value: j.jogador.id, label: j.jogador.nome }))}
+                />
                 <Button size="sm" className="bg-amber-500 hover:bg-amber-600 px-3"
                   onClick={() => salvarDestaque("DESTAQUE", destaqueSel)} disabled={!destaqueSel}>
                   ✓
@@ -192,12 +195,14 @@ export default function DestaquesPage() {
                 <p className="text-sm text-slate-400 italic">Nenhum atribuído</p>
               )}
               <div className="flex gap-2">
-                <Select value={aguaSel} onValueChange={setAguaSel}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Escolher jogador..." /></SelectTrigger>
-                  <SelectContent>
-                    {jogadoresAtivos.map(j => <SelectItem key={j.jogador.id} value={j.jogador.id}>{j.jogador.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <ComboBusca
+                  className="flex-1"
+                  value={aguaSel}
+                  onChange={setAguaSel}
+                  placeholder="Escolher jogador..."
+                  buscaPlaceholder="Buscar jogador..."
+                  options={jogadoresAtivos.map(j => ({ value: j.jogador.id, label: j.jogador.nome }))}
+                />
                 <Button size="sm" className="bg-blue-500 hover:bg-blue-600 px-3"
                   onClick={() => salvarDestaque("AGUA_SALSICHA", aguaSel)} disabled={!aguaSel}>
                   ✓

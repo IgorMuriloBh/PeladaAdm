@@ -5,6 +5,7 @@ import { api, ASSET_BASE } from "@/lib/api";
 import { toast } from "sonner";
 import { UserPlus, Trash2, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 
 interface Presenca { id: string; status: string; convidado?: boolean; jogadorPelada: { id: string; jogador: { nome: string; fotoNormal: string | null } } }
@@ -94,16 +95,17 @@ export default function PortalConvidadosPage() {
           <div className="bg-white border border-slate-100 rounded-xl p-4 mb-4">
             <p className="text-sm font-semibold text-slate-700 mb-3">Incluir convidado</p>
             <div className="flex gap-2">
-              <Select value={jogadorSel} onValueChange={setJogadorSel}>
-                <SelectTrigger className="flex-1 bg-white"><SelectValue placeholder="Selecionar jogador cadastrado..." /></SelectTrigger>
-                <SelectContent>
-                  {disponiveis.map(j => (
-                    <SelectItem key={j.id} value={j.id}>
-                      {j.jogador.nome} {j.posicao === "GOLEIRO" ? "🥅" : ""} ({j.tipo === "MENSALISTA" ? "Mensalista" : "Diarista"})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ComboBusca
+                className="flex-1"
+                value={jogadorSel}
+                onChange={setJogadorSel}
+                placeholder="Selecionar jogador cadastrado..."
+                buscaPlaceholder="Buscar jogador..."
+                options={disponiveis.map(j => ({
+                  value: j.id,
+                  label: `${j.jogador.nome}${j.posicao === "GOLEIRO" ? " 🥅" : ""} (${j.tipo === "MENSALISTA" ? "Mensalista" : "Diarista"})`,
+                }))}
+              />
               <Button className="bg-green-600 hover:bg-green-700 px-4" onClick={adicionar} disabled={salvando || !jogadorSel}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               </Button>

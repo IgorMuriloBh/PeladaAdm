@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, XCircle, Plus, Trash2, Utensils, FileCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -240,12 +241,13 @@ export default function ResenhaPage() {
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700">Jogador</label>
-              <Select value={addForm.jogadorPeladaId} onValueChange={v => setAddForm(f => ({ ...f, jogadorPeladaId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecionar jogador..." /></SelectTrigger>
-                <SelectContent>
-                  {disponiveis.map(j => <SelectItem key={j.id} value={j.id}>{j.jogador.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <ComboBusca
+                value={addForm.jogadorPeladaId}
+                onChange={v => setAddForm(f => ({ ...f, jogadorPeladaId: v }))}
+                placeholder="Selecionar jogador..."
+                buscaPlaceholder="Buscar jogador..."
+                options={disponiveis.map(j => ({ value: j.id, label: j.jogador.nome }))}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700">Categoria</label>

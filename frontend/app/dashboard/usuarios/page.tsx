@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ComboBusca } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, UserCheck, UserX, Shield, Users, Wrench } from "lucide-react";
 
@@ -177,12 +178,13 @@ export default function UsuariosPage() {
               {(form.role === "JOGADOR") && (
                 <div className="space-y-1">
                   <Label>Vincular ao atleta *</Label>
-                  <Select value={form.jogadorPeladaId} onValueChange={v => setForm(f => ({ ...f, jogadorPeladaId: v }))}>
-                    <SelectTrigger className="bg-white"><SelectValue placeholder="Selecione o atleta" /></SelectTrigger>
-                    <SelectContent>
-                      {jogadores.map(j => <SelectItem key={j.id} value={j.id}>{j.jogador.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <ComboBusca
+                    value={form.jogadorPeladaId}
+                    onChange={v => setForm(f => ({ ...f, jogadorPeladaId: v }))}
+                    placeholder="Selecione o atleta"
+                    buscaPlaceholder="Buscar jogador..."
+                    options={jogadores.map(j => ({ value: j.id, label: j.jogador.nome }))}
+                  />
                   <p className="text-xs text-slate-400">Obrigatório: o usuário Jogador precisa estar vinculado a um jogador cadastrado.</p>
                 </div>
               )}
