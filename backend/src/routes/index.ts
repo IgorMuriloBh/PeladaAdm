@@ -91,6 +91,7 @@ router.post("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fi
 router.get("/peladas/:peladaId/partidas/:partidaId/resenha", authMiddleware, fin.buscarResenha);
 router.post("/peladas/:peladaId/resenha/:resenhaId/participantes", authMiddleware, fin.adicionarParticipanteResenha);
 router.patch("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.marcarPagamentoResenha);
+router.patch("/peladas/:peladaId/resenha/participantes/:id/categoria", authMiddleware, fin.alterarCategoriaResenha);
 router.delete("/peladas/:peladaId/resenha/participantes/:id", authMiddleware, fin.removerParticipanteResenha);
 router.get("/peladas/:peladaId/financeiro/resumo", authMiddleware, fin.resumo);
 
@@ -159,6 +160,7 @@ router.post("/portal/partidas/:partidaId/resenha", usuarioMiddleware, requireRol
 router.get("/portal/partidas/:partidaId/resenha", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.buscarResenha);
 router.post("/portal/resenha/:resenhaId/participantes", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.adicionarParticipanteResenha);
 router.patch("/portal/resenha/participantes/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.marcarPagamentoResenha);
+router.patch("/portal/resenha/participantes/:id/categoria", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.alterarCategoriaResenha);
 router.delete("/portal/resenha/participantes/:id", usuarioMiddleware, requireRole("OPERADOR", "ADMINISTRADOR"), fin.removerParticipanteResenha);
 
 export default router;

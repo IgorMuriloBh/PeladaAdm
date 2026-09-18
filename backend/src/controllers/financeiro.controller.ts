@@ -275,6 +275,32 @@ export async function marcarPagamentoResenha(req: AuthRequest, res: Response) {
   res.json(presenca);
 }
 
+// Altera a categoria do participante na resenha (bebe / não bebe / goleiro) e
+// recalcula o valor devido conforme a configuração financeira.
+export async function alterarCategoriaResenha(req: AuthRequest, res: Response) {
+  const pelada = await resolvePelada(req, true);
+  const peladaId = getPeladaId(req);
+  if (!pelada) { res.status(404).json({ error: "Pelada não encontrada" }); return; }
+
+  const id = req.params.id as string;
+  const { categoria } = req.body;
+  if (!["BEBE", "NAO_BEBE", "GOLEIRO_BEBE"].includes(categoria)) {
+    res.status(400).json({ error: "Categoria inválida" }); return;
+  }
+
+  const cfg = (pelada as any).configuracaoFinanceira;
+  const valorDevido = categoria === "BEBE" ? (cfg?.resenhaBebe ?? 85)
+    : categoria === "GOLEIRO_BEBE" ? (cfg?.resenhaGoleiro ?? 40)
+    : (cfg?.resenhaNaoBebe ?? 40);
+
+  const presenca = await prisma.resenhaPresenca.update({
+    where: { id },
+    data: { categoria, valorDevido },
+    include: { jogadorPelada: { include: { jogador: true } } },
+  });
+  res.json(presenca);
+}
+
 export async function removerParticipanteResenha(req: AuthRequest, res: Response) {
   const pelada = await resolvePelada(req, true);
   const peladaId = getPeladaId(req);

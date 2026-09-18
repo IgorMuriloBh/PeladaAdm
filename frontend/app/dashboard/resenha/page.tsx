@@ -86,6 +86,14 @@ export default function ResenhaPage() {
     } catch { toast.error("Erro ao atualizar"); }
   }
 
+  async function alterarCategoria(id: string, categoria: string) {
+    try {
+      await api.patch(`/peladas/${peladaId}/resenha/participantes/${id}/categoria`, { categoria });
+      toast.success("Categoria atualizada");
+      refreshResenha();
+    } catch { toast.error("Erro ao alterar categoria"); }
+  }
+
   async function remover(id: string) {
     try {
       await api.delete(`/peladas/${peladaId}/resenha/participantes/${id}`);
@@ -192,9 +200,16 @@ export default function ResenhaPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{p.jogadorPelada.jogador.nome}</p>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${CATEGORIAS[p.categoria]?.color}`}>
-                        {CATEGORIAS[p.categoria]?.label}
-                      </span>
+                      <Select value={p.categoria} onValueChange={(v) => alterarCategoria(p.id, v)}>
+                        <SelectTrigger className={`inline-flex h-6 w-auto gap-1 px-2 py-0 text-xs font-medium rounded-full border-0 ${CATEGORIAS[p.categoria]?.color}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BEBE">Bebe 🍺</SelectItem>
+                          <SelectItem value="NAO_BEBE">Não bebe 🥤</SelectItem>
+                          <SelectItem value="GOLEIRO_BEBE">Goleiro 🥅</SelectItem>
+                        </SelectContent>
+                      </Select>
                       {p.comprovante && (
                         <a href={`${ASSET_BASE}${p.comprovante}`} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
                           <FileCheck className="w-3.5 h-3.5" /> Ver comprovante
